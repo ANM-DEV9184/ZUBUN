@@ -11,6 +11,7 @@ import SwiftUI
 struct ScannerView: View {
     @State private var vm = ScannerViewModel()
     @State private var authorized = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let offline = OfflineQueue.shared
 
     var body: some View {
@@ -40,7 +41,7 @@ struct ScannerView: View {
                     .transition(.opacity.combined(with: .scale))
             }
         }
-        .animation(.snappy, value: vm.outcome)
+        .animation(reduceMotion ? nil : .snappy, value: vm.outcome)
         .task {
             authorized = await CameraPermission.ensureAccess()
             await offline.replayAll()

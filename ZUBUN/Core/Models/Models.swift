@@ -75,6 +75,10 @@ struct ClockResult: Decodable {
 
 /// `GET /api/staff/shift-stats` — exact keys from the `staff_shift_stats` RPC
 /// (+ `overtime_until` appended by the route). Verified against the backend.
+///
+/// Decoded by normalizing keys (strip non-alphanumerics, lowercase) so it's
+/// immune to `convertFromSnakeCase`'s quirky handling of digit-adjacent keys
+/// like `my_7d`.
 struct ShiftStats: Decodable {
     let today: Int?           // my stamps since Dubai midnight
     let venueToday: Int?      // all-staff stamps at the venue today
@@ -85,6 +89,36 @@ struct ShiftStats: Decodable {
     struct LeaderRow: Decodable, Hashable {
         let name: String?
         let today: Int?
+    }
+
+    private struct AnyKey: CodingKey {
+        var stringValue: String
+        var intValue: Int?
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: AnyKey.self)
+        func norm(_ s: String) -> String { s.lowercased().filter { $0.isLetter || $0.isNumber } }
+        var ints: [String: Int] = [:]
+        var strings: [String: String] = [:]
+        var board: [LeaderRow]?
+        for key in container.allKeys {
+            let n = norm(key.stringValue)
+            if n == "leaderboard" {
+                board = try? container.decode([LeaderRow].self, forKey: key)
+            } else if let i = try? container.decode(Int.self, forKey: key) {
+                ints[n] = i
+            } else if let s = try? container.decode(String.self, forKey: key) {
+                strings[n] = s
+            }
+        }
+        today = ints["today"]
+        venueToday = ints["venuetoday"]
+        my7d = ints["my7d"]
+        leaderboard = board
+        overtimeUntil = strings["overtimeuntil"]
     }
 
     /// My 1-based rank on today's leaderboard, if present.

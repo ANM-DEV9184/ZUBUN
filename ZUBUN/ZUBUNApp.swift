@@ -2,16 +2,20 @@
 //  ZUBUNApp.swift
 //  ZUBUN
 //
-//  Created by Abdullah on 01/07/2026.
+//  App entry. Routes to the right role experience via RootRouter.
 //
 
 import SwiftUI
 
 @main
 struct ZUBUNApp: App {
+    #if os(iOS)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootRouter()
         }
     }
 }

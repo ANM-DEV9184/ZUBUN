@@ -1,3 +1,10 @@
+> ⚠️ **SUPERSEDED (2026-07-02).** We chose **Stripe web billing (B2B)** instead of
+> in-app purchase. The iOS `BillingView` is now **read-only** and the StoreKit path
+> was removed. This doc is kept for reference only — do **not** create the App Store
+> Connect IAP products or enable `APPLE_IAP_ENABLED`. Billing is configured in Stripe
+> (see the Stripe env vars + `scripts/setup-stripe.ts`). Optional cleanup: remove the
+> **In-App Purchase** capability from the target in Xcode (Signing & Capabilities).
+
 # ZUBUN — In-App Purchase (Owner subscriptions) setup
 
 **Who uses it:** the **Owner** role only — the merchant's subscription to the ZUBUN

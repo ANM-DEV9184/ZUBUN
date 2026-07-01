@@ -23,12 +23,8 @@ enum AppConfig {
     /// UAE-only product: all day/window math uses this zone.
     static let timeZoneIdentifier = "Asia/Dubai"
 
-    /// StoreKit 2 auto-renewable subscription product IDs (owner billing, §9.4).
-    /// ⚠️ FOUNDER ACTION: create these in App Store Connect and match the IDs here.
-    static let iapProductStarter  = "io.zubun.sub.starter"
-    static let iapProductStandard = "io.zubun.sub.standard"
-    static let iapProductMulti    = "io.zubun.sub.multi"
-    static var iapProductIDs: [String] { [iapProductStarter, iapProductStandard, iapProductMulti] }
+    // Billing is handled on the ZUBUN web dashboard via Stripe (B2B). The iOS app
+    // shows read-only plan status only — no in-app purchase (see BillingView).
 
     /// Returns true while the anon key is still the placeholder, so the UI can warn
     /// instead of failing opaquely against the network.

@@ -6,10 +6,16 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct RoleChooserView: View {
     var onSelect: (AppRole) -> Void
     @State private var session = SessionStore.shared
+    #if DEBUG
+    @State private var debugToken: String?
+    #endif
 
     var body: some View {
         VStack(spacing: 24) {
@@ -41,6 +47,24 @@ struct RoleChooserView: View {
             }
             Text("UAE · AED · EN / العربية", comment: "Locale footer")
                 .font(.caption).foregroundStyle(.secondary)
+
+            #if DEBUG
+            Button {
+                #if canImport(UIKit)
+                if let debugToken { UIPasteboard.general.string = debugToken }
+                #endif
+            } label: {
+                Text(debugToken == nil ? "⏳ Requesting push token…" : "📋 Copy push token (debug)")
+                    .font(.caption2).foregroundStyle(debugToken == nil ? .secondary : Brand.orange)
+            }
+            .task {
+                await PushManager.shared.requestAuthorizationIfNeeded()
+                for _ in 0..<30 where debugToken == nil {
+                    try? await Task.sleep(for: .seconds(1))
+                    debugToken = PushManager.shared.deviceToken
+                }
+            }
+            #endif
         }
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

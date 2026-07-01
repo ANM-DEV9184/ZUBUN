@@ -91,12 +91,14 @@ export async function POST(req: Request) {
 ## 3. Env (Vercel) — from the APNs key you created
 
 ```
-APNS_KEY_ID=ABC123XYZ                 # the .p8 Key ID
-APNS_TEAM_ID=BV4RVZG72H               # your Team ID
+APNS_KEY_ID=DBU8P4LZG4                 # ZUBUN APNs key (not secret)
+APNS_TEAM_ID=BV4RVZG72H                # Team ID (not secret)
 APNS_BUNDLE_ID=Rentolic-Technologies-Est.ZUBUN
-APNS_P8=-----BEGIN PRIVATE KEY-----\n...contents of AuthKey_XXX.p8...\n-----END PRIVATE KEY-----
-APNS_ENV=sandbox                      # sandbox for dev builds; production for App Store/TestFlight
+APNS_P8=-----BEGIN PRIVATE KEY-----\n...contents of AuthKey_DBU8P4LZG4.p8...\n-----END PRIVATE KEY-----   # SECRET
+APNS_ENV=sandbox                       # sandbox for dev builds; production for App Store/TestFlight
 ```
+> The key was created for **Sandbox & Production**, so this one `.p8` works in both
+> — just flip `APNS_ENV` (`sandbox` for Xcode/dev device builds, `production` for TestFlight/App Store).
 
 ---
 

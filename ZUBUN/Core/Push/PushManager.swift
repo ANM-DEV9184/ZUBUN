@@ -42,7 +42,25 @@ final class PushManager {
     func handleDeviceToken(_ tokenData: Data) {
         let token = tokenData.map { String(format: "%02x", $0) }.joined()
         deviceToken = token
-        // TODO: POST the token to a backend registration endpoint once available,
-        // scoped to the current role/session, so the server can target this device.
+        Task { await syncTokenWithBackend() }
+    }
+
+    /// Convenience for role Home screens: ask for permission (once) + push the
+    /// token to the backend for whatever sessions are active.
+    func onActiveSession() async {
+        await requestAuthorizationIfNeeded()
+        await syncTokenWithBackend()
+    }
+
+    /// Registers the current token with the backend for every active role session
+    /// (a device may hold more than one). No-op until a token + session exist; the
+    /// backend endpoint is defined in docs/PUSH_BACKEND.md.
+    func syncTokenWithBackend() async {
+        guard let token = deviceToken else { return }
+        let session = SessionStore.shared
+        let service = PushService()
+        if session.staff != nil { await service.register(token: token, role: "staff", auth: .staff) }
+        if session.hasCustomerSession { await service.register(token: token, role: "customer", auth: .customer) }
+        if session.hasOwnerSession { await service.register(token: token, role: "owner", auth: .owner) }
     }
 }

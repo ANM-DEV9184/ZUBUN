@@ -23,6 +23,6 @@ struct StaffHome: View {
                 .tabItem { Label("Me", systemImage: "person.fill") }
         }
         .tint(Brand.orange)
-        .task { await PushManager.shared.requestAuthorizationIfNeeded() }
+        .task { await PushManager.shared.onActiveSession() }
     }
 }

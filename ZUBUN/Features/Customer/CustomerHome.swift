@@ -19,7 +19,7 @@ struct CustomerHome: View {
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .tint(Brand.orange)
-        .task { await PushManager.shared.requestAuthorizationIfNeeded() }
+        .task { await PushManager.shared.onActiveSession() }
     }
 }
 

@@ -26,7 +26,7 @@ struct OwnerHome: View {
         .tint(Brand.orange)
         .task {
             await context.loadVenues()
-            await PushManager.shared.requestAuthorizationIfNeeded()
+            await PushManager.shared.onActiveSession()
         }
     }
 }

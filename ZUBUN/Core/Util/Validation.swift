@@ -19,6 +19,12 @@ enum Validation {
         pin.range(of: #"^\d{4,8}$"#, options: .regularExpression) != nil
     }
 
+    /// Pragmatic email check (not RFC-perfect, good enough for a login field).
+    static func isValidEmail(_ email: String) -> Bool {
+        let e = email.trimmingCharacters(in: .whitespaces)
+        return e.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil
+    }
+
     /// Normalises a UAE-typed number towards E.164 (best effort, non-destructive).
     /// Leaves an already-+ number untouched; maps a leading 0 to +971.
     static func normalizeUAEPhone(_ input: String) -> String {

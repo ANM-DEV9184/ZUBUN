@@ -12,6 +12,7 @@ import Observation
 struct JoinVenueView: View {
     @State private var venueID = ""
     @State private var name = ""
+    @State private var mobile = ""
     @State private var marketingOptIn = true
     @State private var showScanner = false
     @State private var banner: (InlineBanner.Kind, String)?
@@ -35,7 +36,11 @@ struct JoinVenueView: View {
                             .padding(12).background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
                         TextField("Your name (optional)", text: $name)
                             .padding(12).background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
-                        Toggle("Receive offers on WhatsApp", isOn: $marketingOptIn)
+                        TextField("Mobile number (for the venue to reach you)", text: $mobile)
+                            .zKeyboard(.phone)
+                            .environment(\.layoutDirection, .leftToRight)
+                            .padding(12).background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
+                        Toggle("Receive offers & updates", isOn: $marketingOptIn)
                     }
                 }
 
@@ -60,8 +65,10 @@ struct JoinVenueView: View {
     private func join() async {
         loading = true; defer { loading = false }
         do {
+            let normalizedMobile = mobile.isEmpty ? nil : Validation.normalizeUAEPhone(mobile)
             let res = try await service.join(venueID: venueID.trimmingCharacters(in: .whitespaces),
                                              name: name.isEmpty ? nil : name,
+                                             mobile: normalizedMobile,
                                              marketingOptIn: marketingOptIn)
             switch res.result {
             case .enrolled, .alreadyMember:

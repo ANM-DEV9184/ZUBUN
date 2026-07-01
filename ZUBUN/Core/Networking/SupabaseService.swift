@@ -24,17 +24,19 @@ final class SupabaseService {
 
     private init() {}
 
-    // MARK: - Customer phone OTP
+    // MARK: - Customer email OTP
 
-    func sendPhoneOTP(_ phoneE164: String) async throws {
-        struct Body: Encodable { let phone: String }
-        let _: EmptyResponse = try await authPost("otp", body: Body(phone: phoneE164))
+    /// Sends a 6-digit email OTP (GoTrue). The Supabase email template must use
+    /// `{{ .Token }}` so a code (not a magic link) is delivered.
+    func sendEmailOTP(_ email: String) async throws {
+        struct Body: Encodable { let email: String; let createUser: Bool }
+        let _: EmptyResponse = try await authPost("otp", body: Body(email: email, createUser: true))
     }
 
-    func verifyPhoneOTP(phone phoneE164: String, code: String) async throws -> String {
-        struct Body: Encodable { let type: String; let phone: String; let token: String }
+    func verifyEmailOTP(email: String, code: String) async throws -> String {
+        struct Body: Encodable { let type: String; let email: String; let token: String }
         let res: TokenResponse = try await authPost("verify",
-                                                     body: Body(type: "sms", phone: phoneE164, token: code))
+                                                     body: Body(type: "email", email: email, token: code))
         return res.accessToken
     }
 

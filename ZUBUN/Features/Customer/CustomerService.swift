@@ -13,14 +13,14 @@ struct CustomerService {
     var supabase: SupabaseService = .shared
     var session: SessionStore = .shared
 
-    // MARK: - Auth (phone OTP)
+    // MARK: - Auth (email OTP)
 
-    func sendOTP(phone: String) async throws {
-        try await supabase.sendPhoneOTP(phone)
+    func sendOTP(email: String) async throws {
+        try await supabase.sendEmailOTP(email)
     }
 
-    func verifyOTP(phone: String, code: String) async throws {
-        let token = try await supabase.verifyPhoneOTP(phone: phone, code: code)
+    func verifyOTP(email: String, code: String) async throws {
+        let token = try await supabase.verifyEmailOTP(email: email, code: code)
         session.saveCustomerToken(token)
     }
 
@@ -44,10 +44,12 @@ struct CustomerService {
 
     // MARK: - Actions
 
-    func join(venueID: String, name: String?, marketingOptIn: Bool) async throws -> JoinResult {
-        struct Body: Encodable { let venueId: String; let name: String?; let marketingOptIn: Bool }
+    /// `mobile` is captured for the owner's/venue's reference (offline outreach) —
+    /// it is NOT used for auth (auth is the verified email).
+    func join(venueID: String, name: String?, mobile: String?, marketingOptIn: Bool) async throws -> JoinResult {
+        struct Body: Encodable { let venueId: String; let name: String?; let mobile: String?; let marketingOptIn: Bool }
         return try await api.post("/api/customer/join",
-                                  body: Body(venueId: venueID, name: name, marketingOptIn: marketingOptIn),
+                                  body: Body(venueId: venueID, name: name, mobile: mobile, marketingOptIn: marketingOptIn),
                                   auth: .customer)
     }
 

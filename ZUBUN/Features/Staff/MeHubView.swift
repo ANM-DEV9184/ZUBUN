@@ -63,6 +63,10 @@ struct MeHubView: View {
                 Text("Staff accounts are managed by your venue owner. This sends a deletion request to support.",
                      comment: "Staff deletion footer")
             }
+
+            #if DEBUG
+            DebugPushTokenRow()
+            #endif
         }
         .navigationTitle(Text("Me", comment: "Me tab title"))
         .task { stats = try? await service.shiftStats() }

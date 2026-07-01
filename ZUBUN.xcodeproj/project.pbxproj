@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B8081C742FF57AD300431F00 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B8081C732FF57AD300431F00 /* StoreKit.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		B8085E232FF4686D0062038F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B8081C732FF57AD300431F00 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		B8085E152FF4686B0062038F /* ZUBUN.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZUBUN.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8085E222FF4686D0062038F /* ZUBUNTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZUBUNTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8085E2C2FF4686D0062038F /* ZUBUNUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZUBUNUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B8081C742FF57AD300431F00 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,12 +78,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B8081C722FF57AD300431F00 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B8081C732FF57AD300431F00 /* StoreKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B8085E0C2FF4686B0062038F = {
 			isa = PBXGroup;
 			children = (
 				B8085E172FF4686B0062038F /* ZUBUN */,
 				B8085E252FF4686D0062038F /* ZUBUNTests */,
 				B8085E2F2FF4686D0062038F /* ZUBUNUITests */,
+				B8081C722FF57AD300431F00 /* Frameworks */,
 				B8085E162FF4686B0062038F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -392,6 +407,7 @@
 				CODE_SIGN_ENTITLEMENTS = ZUBUN/ZUBUN.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BV4RVZG72H;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -437,6 +453,7 @@
 				CODE_SIGN_ENTITLEMENTS = ZUBUN/ZUBUN.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BV4RVZG72H;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;

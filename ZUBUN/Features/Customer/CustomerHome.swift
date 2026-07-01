@@ -56,6 +56,10 @@ struct CustomerSettingsView: View {
             }
 
             if let banner { Section { Text(banner).foregroundStyle(.secondary) } }
+
+            #if DEBUG
+            DebugPushTokenRow()
+            #endif
         }
         .navigationTitle(Text("Settings", comment: "Customer settings title"))
         .confirmationDialog("Delete your account?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {

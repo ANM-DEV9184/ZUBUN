@@ -66,6 +66,10 @@ struct OwnerMoreView: View {
                 Text("Sends a deletion request for your merchant account and data (UAE PDPL).",
                      comment: "Owner deletion footer")
             }
+
+            #if DEBUG
+            DebugPushTokenRow()
+            #endif
         }
         .navigationTitle(Text("More", comment: "Owner more title"))
         .confirmationDialog("Delete your account?", isPresented: $showDelete, titleVisibility: .visible) {

@@ -14,14 +14,28 @@ import Observation
 final class OwnerDashboardViewModel {
     var kpis: OwnerKPIs?
     var approvals: [StampApproval] = []
+    var billing: MerchantPlan?
     var isLoading = false
     var error: String?
     private let service = OwnerService()
+
+    /// A dunning banner to show on the overview, if any.
+    var billingWarning: (InlineBanner.Kind, String)? {
+        switch billing?.billingStatus {
+        case "past_due":
+            return (.warning, String(localized: "billing.past_due", defaultValue: "Payment failed — please update your card. Your program keeps running during the grace period."))
+        case "cancelled":
+            return (.error, String(localized: "billing.cancelled", defaultValue: "Subscription paused. Customers can still redeem rewards they've earned, but new stamps are paused until you reactivate."))
+        default:
+            return nil
+        }
+    }
 
     func load() async {
         isLoading = true; error = nil
         defer { isLoading = false }
         do {
+            billing = try? await service.merchantPlan()
             let k = try await service.kpis()
             kpis = k
             // Fetch the approval queue for each venue and merge.
@@ -54,6 +68,10 @@ struct OwnerDashboardView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                if let warning = vm.billingWarning {
+                    InlineBanner(kind: warning.0, message: warning.1)
+                }
+
                 LazyVGrid(columns: columns, spacing: 12) {
                     KPITile(title: "Members", value: vm.kpis?.members)
                     KPITile(title: "Active cards", value: vm.kpis?.activeCards)

@@ -603,6 +603,17 @@
         }
       }
     },
+    "billing.cancelled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscription paused. Customers can still redeem rewards they've earned, but new stamps are paused until you reactivate."
+          }
+        }
+      }
+    },
     "billing.current_plan" : {
       "comment" : "The title of the current plan section in the billing view.",
       "extractionState" : "extracted_with_value",
@@ -676,6 +687,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Missing merchant id."
+          }
+        }
+      }
+    },
+    "billing.past_due" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Payment failed — please update your card. Your program keeps running during the grace period."
           }
         }
       }

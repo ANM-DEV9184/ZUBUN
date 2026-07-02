@@ -138,4 +138,26 @@ struct StaffService {
         let res: StaffShiftsResponse = try await api.get("/api/staff/shifts", auth: .staff)
         return res.shifts
     }
+
+    // MARK: - Self-service reads (Phase 6)
+
+    func attendance(from: String? = nil, to: String? = nil) async throws -> StaffAttendanceResponse {
+        var q: [URLQueryItem] = []
+        if let from { q.append(URLQueryItem(name: "from", value: from)) }
+        if let to { q.append(URLQueryItem(name: "to", value: to)) }
+        return try await api.get("/api/staff/attendance", query: q, auth: .staff)
+    }
+
+    func achievements() async throws -> StaffAchievements {
+        try await api.get("/api/staff/achievements", auth: .staff)
+    }
+
+    func payslips() async throws -> StaffPayslipsResponse {
+        try await api.get("/api/staff/payslips", auth: .staff)
+    }
+
+    func colleagues() async throws -> [StaffColleague] {
+        let res: StaffColleaguesResponse = try await api.get("/api/staff/colleagues", auth: .staff)
+        return res.colleagues
+    }
 }

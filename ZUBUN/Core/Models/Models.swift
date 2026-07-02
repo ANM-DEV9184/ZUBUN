@@ -104,6 +104,75 @@ struct StaffShift: Decodable, Identifiable {
 
 struct StaffShiftsResponse: Decodable { let shifts: [StaffShift] }
 
+// MARK: - Staff self-service (Phase 6): attendance / achievements / pay / colleagues
+
+struct StaffAttendanceEntry: Decodable, Identifiable {
+    let entryId: String?
+    let kind: String?
+    let workDate: String?
+    let clockInAt: String?
+    let clockOutAt: String?
+    let workedMinutes: Int?
+    let paidWorkedMinutes: Int?
+    let breakMinutes: Int?
+    let overtimeMinutes: Int?
+    let overtimeStatus: String?
+    let earlyLeaveMinutes: Int?
+    let lateMinutes: Int?
+    let status: String?
+    var id: String { entryId ?? "\(workDate ?? "")-\(clockInAt ?? "")" }
+    var isNoShow: Bool { kind == "no_show" || status == "no_show" }
+}
+
+struct StaffAttendanceResponse: Decodable {
+    let otPayPolicy: String?
+    let entries: [StaffAttendanceEntry]
+}
+
+struct StaffAchievements: Decodable {
+    let lifetime: Int?
+    let month: Int?
+    let rank: Int?
+    let bestDay: Int?
+    let streak: Int?
+    let nextMilestone: Int?
+}
+
+struct StaffPayslip: Decodable, Identifiable {
+    let id: String
+    let periodMonth: String?
+    let grossAmount: Double?
+    let adjustmentTotal: Double?
+    let currency: String?
+    let status: String?
+    let regularMinutes: Int?
+    let overtimeMinutes: Int?
+    let paidAt: String?
+    let confirmedAt: String?
+    var isPaid: Bool { status == "paid" }
+}
+
+struct PayAdjustment: Decodable, Identifiable {
+    let id: String
+    let payslipId: String?
+    let label: String?
+    let amount: Double?
+    let note: String?
+}
+
+struct StaffPayslipsResponse: Decodable {
+    let payslips: [StaffPayslip]
+    let adjustments: [PayAdjustment]
+}
+
+struct StaffColleague: Decodable, Identifiable {
+    let id: String
+    let displayName: String?
+    var name: String { displayName ?? "Colleague" }
+}
+
+struct StaffColleaguesResponse: Decodable { let colleagues: [StaffColleague] }
+
 /// `GET /api/staff/shift-stats` — exact keys from the `staff_shift_stats` RPC
 /// (+ `overtime_until` appended by the route). Verified against the backend.
 ///

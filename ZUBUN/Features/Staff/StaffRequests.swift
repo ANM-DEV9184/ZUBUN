@@ -54,9 +54,18 @@ struct RequestsView: View {
     @State private var dayoffFrom = Date()
     @State private var dayoffTo = Date()
     @State private var missNote = ""
+    // Shift swap
+    @State private var myShifts: [StaffShift] = []
+    @State private var colleagues: [StaffColleague] = []
+    @State private var swapShiftID = ""
+    @State private var swapToStaff = ""
+    @State private var swapReason = ""
     @State private var banner: (InlineBanner.Kind, String)?
     @State private var loading = false
     private let service = StaffService()
+
+    /// Only real working shifts can be swapped.
+    private var workingShifts: [StaffShift] { myShifts.filter { !$0.isOff && $0.startTime != nil } }
 
     private static let dateFmt: DateFormatter = {
         let f = DateFormatter(); f.timeZone = DubaiDate.timeZone; f.dateFormat = "yyyy-MM-dd"; return f
@@ -90,11 +99,45 @@ struct RequestsView: View {
                     .disabled(loading)
             }
 
+            if !workingShifts.isEmpty && !colleagues.isEmpty {
+                Section(String(localized: "requests.swap", defaultValue: "Swap a shift")) {
+                    Picker("My shift", selection: $swapShiftID) {
+                        Text("Select…").tag("")
+                        ForEach(workingShifts) { s in
+                            Text("\(s.dateLabel) · \(s.displayTimes)").tag(s.id)
+                        }
+                    }
+                    Picker("Swap with", selection: $swapToStaff) {
+                        Text("Select…").tag("")
+                        ForEach(colleagues) { c in Text(c.name).tag(c.id) }
+                    }
+                    TextField("Reason (optional)", text: $swapReason, axis: .vertical)
+                    Button("Request swap") { Task { await submitSwap() } }
+                        .disabled(loading || swapShiftID.isEmpty || swapToStaff.isEmpty)
+                }
+            }
+
             if let banner {
                 Section { InlineBanner(kind: banner.0, message: banner.1) }
             }
         }
         .navigationTitle(Text("Requests", comment: "Requests title"))
+        .task {
+            async let s = service.shifts()
+            async let c = service.colleagues()
+            myShifts = (try? await s) ?? []
+            colleagues = (try? await c) ?? []
+        }
+    }
+
+    private func submitSwap() async {
+        loading = true; defer { loading = false }
+        do {
+            let res = try await service.swap(shiftID: swapShiftID, toStaff: swapToStaff,
+                                             reason: swapReason.isEmpty ? nil : swapReason)
+            banner = (res.result == .requested ? .info : .warning, res.result.userMessage)
+            if res.result == .requested { swapShiftID = ""; swapToStaff = ""; swapReason = "" }
+        } catch { banner = (.error, error.localizedDescription) }
     }
 
     private func submitDayoff() async {

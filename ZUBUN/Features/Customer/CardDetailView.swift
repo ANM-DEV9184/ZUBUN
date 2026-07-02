@@ -56,11 +56,6 @@ struct CardDetailView: View {
     @State private var reviewURL: URL?
     @Environment(\.scenePhase) private var scenePhase
 
-    /// Invite link: /j/<venueId>?ref=<membershipId> (spec A6).
-    private func referralURL(venueID: String) -> URL? {
-        URL(string: "\(AppConfig.apiBaseURL.absoluteString)/j/\(venueID)?ref=\(vm.membershipID)")
-    }
-
     init(membershipID: String) {
         _vm = State(initialValue: CardDetailViewModel(membershipID: membershipID))
     }
@@ -204,11 +199,6 @@ struct CardDetailView: View {
             Button { showBirthday = true } label: {
                 Label("Add my birthday", systemImage: "gift").frame(maxWidth: .infinity, minHeight: 44)
             }.buttonStyle(.bordered)
-            if let d = vm.detail, let url = referralURL(venueID: d.venueId) {
-                ShareLink(item: url) {
-                    Label("Invite a friend", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44)
-                }.buttonStyle(.bordered)
-            }
             Button(role: .destructive) { Task { await vm.optOutThisVenue() } } label: {
                 Label("Stop offers from this venue", systemImage: "bell.slash").frame(maxWidth: .infinity, minHeight: 44)
             }.buttonStyle(.bordered)

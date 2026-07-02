@@ -11,6 +11,7 @@ import Observation
 
 struct MeHubView: View {
     @State private var stats: ShiftStats?
+    @State private var achievements: StaffAchievements?
     @State private var showChangePIN = false
     @State private var showRequests = false
     @State private var showDelete = false
@@ -38,7 +39,23 @@ struct MeHubView: View {
                 LabeledContent("Last 7 days", value: "\(stats?.my7d ?? 0)")
             }
 
+            if let a = achievements {
+                Section(String(localized: "me.achievements", defaultValue: "Achievements")) {
+                    LabeledContent("Lifetime stamps", value: "\(a.lifetime ?? 0)")
+                    LabeledContent("This month", value: "\(a.month ?? 0)")
+                    if let r = a.rank { LabeledContent("Venue rank", value: "#\(r)") }
+                    if let s = a.streak, s > 0 { LabeledContent("On-time streak", value: "\(s) days") }
+                    if let n = a.nextMilestone, n > 0 { LabeledContent("Next milestone", value: "\(n)") }
+                }
+            }
+
             Section {
+                NavigationLink { AttendanceHistoryView() } label: {
+                    Label("My attendance", systemImage: "clock.arrow.circlepath")
+                }
+                NavigationLink { PayslipsView() } label: {
+                    Label("My pay", systemImage: "banknote")
+                }
                 Button { showRequests = true } label: {
                     Label("Requests & leave", systemImage: "calendar.badge.clock")
                 }
@@ -69,7 +86,12 @@ struct MeHubView: View {
             #endif
         }
         .navigationTitle(Text("Me", comment: "Me tab title"))
-        .task { stats = try? await service.shiftStats() }
+        .task {
+            async let s = service.shiftStats()
+            async let a = service.achievements()
+            stats = try? await s
+            achievements = try? await a
+        }
         .confirmationDialog("Request account deletion?", isPresented: $showDelete, titleVisibility: .visible) {
             Button("Email support", role: .destructive) {
                 let venue = session.staff?.venueID ?? ""

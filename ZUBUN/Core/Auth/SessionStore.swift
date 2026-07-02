@@ -101,6 +101,7 @@ final class SessionStore {
     /// restricted Owner experience.
     var ownerRole: String? { ownerToken.flatMap { JWTPayload.decode($0)?.appMetadata?.role } }
     var isManager: Bool { ownerRole == "manager" }
+    var isAdmin: Bool { ownerRole == "admin" }
 
     func clearOwner() {
         Keychain.remove(Key.ownerToken)

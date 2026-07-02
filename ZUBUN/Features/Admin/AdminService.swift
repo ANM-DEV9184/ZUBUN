@@ -1,0 +1,78 @@
+//
+//  AdminService.swift
+//  ZUBUN
+//
+//  Client for the bearer admin API (/api/admin/app/*). Uses the .owner auth mode
+//  since the admin's Supabase token is stored as the owner token.
+//
+
+import Foundation
+
+struct AdminService {
+    var api = APIClient()
+
+    func overview() async throws -> AdminOverview {
+        try await api.get("/api/admin/app/overview", auth: .owner)
+    }
+
+    func merchants(q: String = "") async throws -> [AdminMerchant] {
+        let query: [URLQueryItem] = q.isEmpty ? [] : [.init(name: "q", value: q)]
+        let r: AdminMerchantsResponse = try await api.get("/api/admin/app/merchants", query: query, auth: .owner)
+        return r.merchants
+    }
+
+    func merchant(id: String) async throws -> AdminMerchantDetail {
+        try await api.get("/api/admin/app/merchant", query: [.init(name: "id", value: id)], auth: .owner)
+    }
+
+    func updateMerchant(id: String, planTier: String?, billingStatus: String?) async throws {
+        struct Body: Encodable { let merchantId: String; let planTier: String?; let billingStatus: String? }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/merchant-update",
+            body: Body(merchantId: id, planTier: planTier, billingStatus: billingStatus), auth: .owner)
+    }
+
+    func account(id: String, action: String) async throws {
+        struct Body: Encodable { let merchantId: String; let action: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/account",
+            body: Body(merchantId: id, action: action), auth: .owner)
+    }
+
+    func audit() async throws -> [AdminAudit] {
+        let r: AdminAuditResponse = try await api.get("/api/admin/app/audit", auth: .owner)
+        return r.actions
+    }
+
+    func tickets(status: String) async throws -> [AdminTicket] {
+        let query: [URLQueryItem] = [.init(name: "status", value: status)]
+        let r: AdminTicketsResponse = try await api.get("/api/admin/app/support", query: query, auth: .owner)
+        return r.tickets
+    }
+
+    func thread(ticketID: String) async throws -> AdminThreadResponse {
+        try await api.get("/api/admin/app/support/thread",
+                          query: [.init(name: "ticket_id", value: ticketID)], auth: .owner)
+    }
+
+    func reply(ticketID: String, body: String) async throws {
+        struct Body: Encodable { let ticketId: String; let action: String; let body: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/support/thread",
+            body: Body(ticketId: ticketID, action: "reply", body: body), auth: .owner)
+    }
+
+    func note(ticketID: String, body: String) async throws {
+        struct Body: Encodable { let ticketId: String; let action: String; let body: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/support/thread",
+            body: Body(ticketId: ticketID, action: "note", body: body), auth: .owner)
+    }
+
+    func setStatus(ticketID: String, status: String) async throws {
+        struct Body: Encodable { let ticketId: String; let action: String; let status: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/support/thread",
+            body: Body(ticketId: ticketID, action: "status", status: status), auth: .owner)
+    }
+}

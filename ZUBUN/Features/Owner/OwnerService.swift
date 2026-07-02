@@ -24,6 +24,17 @@ struct OwnerService {
         session.saveOwnerToken(tokens.accessToken, refresh: tokens.refreshToken)
     }
 
+    /// Email-code (OTP) sign-in — used by admins (who have no password) and any
+    /// owner who prefers a code. Saves the resulting session as the owner token;
+    /// RootRouter routes an admin token to the Admin console.
+    func sendLoginCode(email: String) async throws {
+        try await supabase.sendEmailOTP(email)
+    }
+    func signInWithCode(email: String, code: String) async throws {
+        let tokens = try await supabase.verifyEmailOTP(email: email, code: code)
+        session.saveOwnerToken(tokens.accessToken, refresh: tokens.refreshToken)
+    }
+
     /// Refresh the owner access token from the stored refresh token. Runs at
     /// owner-app launch so an expired token doesn't blank every read, and so any
     /// updated app_metadata claims (merchant_id / role) propagate without a

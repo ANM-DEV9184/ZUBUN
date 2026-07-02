@@ -35,8 +35,9 @@ struct RootRouter: View {
                 if session.hasCustomerSession { CustomerHome() }
                 else { roleLogin { CustomerLoginView { } } }
             case .owner:
-                if session.hasOwnerSession { OwnerHome() }
-                else { roleLogin { OwnerLoginView { } } }
+                if session.hasOwnerSession {
+                    if session.isAdmin { AdminHome() } else { OwnerHome() }
+                } else { roleLogin { OwnerLoginView { } } }
             }
         }
         .overlay(alignment: .bottom) {

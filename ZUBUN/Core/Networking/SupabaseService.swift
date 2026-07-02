@@ -42,11 +42,21 @@ final class SupabaseService {
 
     // MARK: - Owner email/password
 
-    func ownerSignIn(email: String, password: String) async throws -> String {
+    func ownerSignIn(email: String, password: String) async throws -> AuthTokens {
         struct Body: Encodable { let email: String; let password: String }
         let res: TokenResponse = try await authPost("token", query: [.init(name: "grant_type", value: "password")],
                                                      body: Body(email: email, password: password))
-        return res.accessToken
+        return AuthTokens(accessToken: res.accessToken, refreshToken: res.refreshToken)
+    }
+
+    /// Exchange a refresh token for a fresh access token (GoTrue
+    /// `token?grant_type=refresh_token`). The new access token also carries any
+    /// updated `app_metadata` claims (merchant_id / role).
+    func refreshSession(refreshToken: String) async throws -> AuthTokens {
+        struct Body: Encodable { let refreshToken: String }
+        let res: TokenResponse = try await authPost("token", query: [.init(name: "grant_type", value: "refresh_token")],
+                                                     body: Body(refreshToken: refreshToken))
+        return AuthTokens(accessToken: res.accessToken, refreshToken: res.refreshToken)
     }
 
     func signOut() async {
@@ -233,6 +243,12 @@ final class SupabaseService {
 }
 
 // MARK: - Wire types
+
+/// Access + refresh token pair returned by GoTrue sign-in / refresh.
+struct AuthTokens {
+    let accessToken: String
+    let refreshToken: String?
+}
 
 private struct TokenResponse: Decodable {
     let accessToken: String

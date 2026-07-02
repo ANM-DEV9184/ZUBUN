@@ -20,8 +20,24 @@ struct OwnerService {
     var session: SessionStore = .shared
 
     func signIn(email: String, password: String) async throws {
-        let token = try await supabase.ownerSignIn(email: email, password: password)
-        session.saveOwnerToken(token)
+        let tokens = try await supabase.ownerSignIn(email: email, password: password)
+        session.saveOwnerToken(tokens.accessToken, refresh: tokens.refreshToken)
+    }
+
+    /// Refresh the owner access token from the stored refresh token. Runs at
+    /// owner-app launch so an expired token doesn't blank every read, and so any
+    /// updated app_metadata claims (merchant_id / role) propagate without a
+    /// manual sign-out. No-op (returns false) if there's no refresh token yet.
+    @discardableResult
+    func refreshOwnerSession() async -> Bool {
+        guard let refresh = session.ownerRefreshToken else { return false }
+        do {
+            let tokens = try await supabase.refreshSession(refreshToken: refresh)
+            session.saveOwnerToken(tokens.accessToken, refresh: tokens.refreshToken ?? refresh)
+            return true
+        } catch {
+            return false
+        }
     }
 
     func signOut() async {

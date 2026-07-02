@@ -25,6 +25,9 @@ struct OwnerHome: View {
         }
         .tint(Brand.orange)
         .task {
+            // Refresh the access token first so an expired JWT doesn't blank
+            // every read, and any updated claims (merchant_id / role) apply.
+            await OwnerService().refreshOwnerSession()
             await context.loadVenues()
             await PushManager.shared.onActiveSession()
         }

@@ -29,6 +29,7 @@ final class SessionStore {
         static let staff = "zubun.session.staff"
         static let customerToken = "zubun.session.customer"   // Supabase access token
         static let ownerToken = "zubun.session.owner"         // Supabase access token
+        static let ownerRefresh = "zubun.session.owner.refresh" // Supabase refresh token
         static let lastRole = "zubun.session.lastRole"
     }
 
@@ -82,13 +83,15 @@ final class SessionStore {
         hasCustomerSession = false
     }
 
-    func saveOwnerToken(_ token: String) {
+    func saveOwnerToken(_ token: String, refresh: String? = nil) {
         Keychain.set(token, for: Key.ownerToken)
+        if let refresh { Keychain.set(refresh, for: Key.ownerRefresh) }
         hasOwnerSession = true
         lastRole = .owner
     }
 
     var ownerToken: String? { Keychain.get(Key.ownerToken) }
+    var ownerRefreshToken: String? { Keychain.get(Key.ownerRefresh) }
 
     /// Owner-app role from the JWT ("owner" or "manager"). Managers get a
     /// restricted Owner experience.
@@ -97,6 +100,7 @@ final class SessionStore {
 
     func clearOwner() {
         Keychain.remove(Key.ownerToken)
+        Keychain.remove(Key.ownerRefresh)
         hasOwnerSession = false
     }
 }

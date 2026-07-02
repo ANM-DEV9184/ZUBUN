@@ -1092,6 +1092,9 @@
         }
       }
     },
+    "Clock-in code changes every: %lld min" : {
+
+    },
     "clock.in" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

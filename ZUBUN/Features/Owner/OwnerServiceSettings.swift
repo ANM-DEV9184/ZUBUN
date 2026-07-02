@@ -28,7 +28,7 @@ extension OwnerService {
     func venueConfig(venueID: String) async throws -> VenueConfig? {
         let rows: [VenueConfig] = try await supabase.restGet("venues",
             query: [
-                .init(name: "select", value: "loyalty_mode,points_rate,repeat_stamp_approval_minutes,staff_bonus_enabled,birthday_gift,birthday_gift_count,birthday_gift_label,branding"),
+                .init(name: "select", value: "loyalty_mode,points_rate,repeat_stamp_approval_minutes,staff_bonus_enabled,birthday_gift,birthday_gift_count,birthday_gift_label,clock_code_interval_minutes,branding"),
                 .init(name: "id", value: "eq.\(venueID)"),
                 .init(name: "limit", value: "1"),
             ], accessToken: session.ownerToken)
@@ -76,6 +76,13 @@ extension OwnerService {
     func setStaffBonus(venueID: String, enabled: Bool) async throws -> DecideResult {
         struct P: Encodable { let pVenueId: String; let pEnabled: Bool }
         return try await supabase.rpc("set_venue_staff_bonus", params: P(pVenueId: venueID, pEnabled: enabled), accessToken: session.ownerToken)
+    }
+
+    /// Rotation interval (minutes, 15…120) for the staff clock-in code.
+    @discardableResult
+    func setClockInterval(venueID: String, minutes: Int) async throws -> DecideResult {
+        struct P: Encodable { let pVenueId: String; let pMinutes: Int }
+        return try await supabase.rpc("set_venue_clock_interval", params: P(pVenueId: venueID, pMinutes: minutes), accessToken: session.ownerToken)
     }
 
     @discardableResult

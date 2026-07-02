@@ -20,6 +20,7 @@ final class SettingsViewModel {
     var rewardText = ""
     // operations
     var repeatApproval = 10
+    var clockInterval = 30
     var staffBonus = false
     var birthdayGift = "none"
     var birthdayCount = 1
@@ -48,6 +49,7 @@ final class SettingsViewModel {
         }
         if let cfg = try? await service.venueConfig(venueID: venueID) {
             repeatApproval = cfg.repeatStampApprovalMinutes ?? 10
+            clockInterval = cfg.clockCodeIntervalMinutes ?? 30
             staffBonus = cfg.staffBonusEnabled ?? false
             birthdayGift = cfg.birthdayGift ?? "none"
             birthdayCount = cfg.birthdayGiftCount ?? 1
@@ -77,6 +79,7 @@ final class SettingsViewModel {
         guard let v = venueID else { return }
         await run(String(localized: "settings.saved", defaultValue: "Saved")) {
             _ = try await service.setRepeatApproval(venueID: v, minutes: repeatApproval)
+            _ = try await service.setClockInterval(venueID: v, minutes: clockInterval)
             _ = try await service.setStaffBonus(venueID: v, enabled: staffBonus)
             _ = try await service.setBirthdayGift(venueID: v, gift: birthdayGift, count: birthdayCount,
                                                   label: birthdayGift == "treat" ? birthdayLabel : nil)
@@ -139,6 +142,7 @@ struct SettingsView: View {
 
             Section("Operations") {
                 Stepper("Repeat-stamp approval: \(vm.repeatApproval) min", value: $vm.repeatApproval, in: 0...240, step: 5)
+                Stepper("Clock-in code changes every: \(vm.clockInterval) min", value: $vm.clockInterval, in: 15...120, step: 5)
                 Toggle("Allow staff bonus stamps", isOn: $vm.staffBonus)
                 Picker("Birthday gift", selection: $vm.birthdayGift) {
                     Text("None").tag("none"); Text("Bonus stamps").tag("stamps"); Text("Treat").tag("treat")

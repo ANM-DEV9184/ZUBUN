@@ -235,3 +235,26 @@ struct StampApproval: Decodable, Identifiable {
         return "•••• " + phone.suffix(4)
     }
 }
+
+// MARK: - Notification inbox (GET /api/customer/notifications)
+
+/// One in-app notification (venue-scoped campaign push, mirrored to the inbox).
+struct CustomerNotification: Decodable, Identifiable {
+    let id: String
+    let venueId: String?
+    let membershipId: String?
+    let campaignId: String?
+    let category: String
+    let title: String
+    let body: String
+    let deepLink: String?
+    let readAt: String?        // ISO8601; nil = unread
+    let createdAt: String      // ISO8601
+
+    var isUnread: Bool { readAt == nil }
+}
+
+struct NotificationsResponse: Decodable {
+    let notifications: [CustomerNotification]
+    let unread: Int
+}

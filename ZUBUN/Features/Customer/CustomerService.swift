@@ -42,6 +42,22 @@ struct CustomerService {
                           auth: .customer)
     }
 
+    // MARK: - Notification inbox
+
+    func notifications() async throws -> NotificationsResponse {
+        try await api.get("/api/customer/notifications", auth: .customer)
+    }
+
+    /// Mark one item read (`id`) or all unread items read (`id == nil`).
+    @discardableResult
+    func markNotificationRead(id: String?) async throws -> Bool {
+        struct Body: Encodable { let id: String? }
+        struct OK: Decodable {}
+        let _: OK = try await api.post("/api/customer/notifications/read",
+                                       body: Body(id: id), auth: .customer)
+        return true
+    }
+
     // MARK: - Actions
 
     /// `mobile` is captured for the owner's/venue's reference (offline outreach) —

@@ -9,17 +9,29 @@
 import SwiftUI
 
 struct CustomerHome: View {
+    @State private var router = CustomerRouter.shared
+
     var body: some View {
-        TabView {
-            NavigationStack { MyCardsView() }
+        TabView(selection: $router.tab) {
+            NavigationStack(path: $router.cardPath) { MyCardsView() }
                 .tabItem { Label("Cards", systemImage: "wallet.pass.fill") }
+                .tag(CustomerTab.cards)
             NavigationStack { JoinVenueView() }
                 .tabItem { Label("Join", systemImage: "plus.circle.fill") }
+                .tag(CustomerTab.join)
+            NavigationStack { NotificationsView() }
+                .tabItem { Label("Inbox", systemImage: "bell.fill") }
+                .badge(router.unread)
+                .tag(CustomerTab.inbox)
             NavigationStack { CustomerSettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tag(CustomerTab.settings)
         }
         .tint(Brand.orange)
-        .task { await PushManager.shared.onActiveSession() }
+        .task {
+            await PushManager.shared.onActiveSession()
+            await router.refreshUnread()
+        }
     }
 }
 

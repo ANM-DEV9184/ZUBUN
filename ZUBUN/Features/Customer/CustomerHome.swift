@@ -78,6 +78,12 @@ struct CustomerSettingsView: View {
                      comment: "Customer birthday footer")
             }
 
+            Section {
+                NavigationLink { SupportCenterView(auth: .customer) } label: {
+                    Label("Help & support", systemImage: "bubble.left.and.bubble.right")
+                }
+            }
+
             Section(String(localized: "settings.privacy", defaultValue: "Privacy")) {
                 Button {
                     Task {

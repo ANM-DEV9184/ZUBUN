@@ -62,6 +62,9 @@ struct MeHubView: View {
                 Button { showChangePIN = true } label: {
                     Label("Change PIN", systemImage: "key.fill")
                 }
+                NavigationLink { SupportCenterView(auth: .staff) } label: {
+                    Label("Help & support", systemImage: "bubble.left.and.bubble.right")
+                }
             }
 
             Section {

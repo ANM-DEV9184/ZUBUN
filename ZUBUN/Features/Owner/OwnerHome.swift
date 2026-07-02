@@ -58,7 +58,7 @@ struct OwnerMoreView: View {
                 NavigationLink { CampaignsView() } label: { Label("Campaigns", systemImage: "megaphone") }
                 NavigationLink { FeedbackView() } label: { Label("Feedback", systemImage: "star.bubble") }
                 NavigationLink { BillingView() } label: { Label("Billing", systemImage: "creditcard") }
-                NavigationLink { SupportView() } label: { Label("Support", systemImage: "bubble.left.and.bubble.right") }
+                NavigationLink { SupportCenterView(auth: .owner) } label: { Label("Support", systemImage: "bubble.left.and.bubble.right") }
             }
 
             if let banner { Section { Text(banner).foregroundStyle(.secondary) } }

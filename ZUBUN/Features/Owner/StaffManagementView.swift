@@ -28,10 +28,13 @@ final class StaffMgmtViewModel {
     }
 
     func add(name: String) async {
-        guard let v = venueID else {
+        // Fall back to the app-wide selected venue if the screen's own copy
+        // hasn't landed yet (the load task can race the venue list fetch).
+        guard let v = venueID ?? OwnerContext.shared.selectedVenueID else {
             banner = (.error, String(localized: "staff.novenue", defaultValue: "Select a venue first, then add staff."))
             return
         }
+        venueID = v
         guard name.count >= 2 else {
             banner = (.error, String(localized: "staff.shortname", defaultValue: "Enter a name (at least 2 letters)."))
             return
@@ -49,7 +52,7 @@ final class StaffMgmtViewModel {
     }
 
     func toggle(_ s: OwnerStaff) async {
-        guard let v = venueID else { return }
+        guard let v = venueID ?? OwnerContext.shared.selectedVenueID else { return }
         _ = try? await service.setStaffStatus(staffID: s.id, status: s.isActive ? "suspended" : "active")
         await load(venueID: v)
     }

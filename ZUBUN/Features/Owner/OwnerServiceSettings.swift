@@ -28,7 +28,7 @@ extension OwnerService {
     func venueConfig(venueID: String) async throws -> VenueConfig? {
         let rows: [VenueConfig] = try await supabase.restGet("venues",
             query: [
-                .init(name: "select", value: "loyalty_mode,points_rate,repeat_stamp_approval_minutes,staff_bonus_enabled,birthday_gift,birthday_gift_count,birthday_gift_label,clock_code_interval_minutes,branding"),
+                .init(name: "select", value: "loyalty_mode,points_rate,repeat_stamp_approval_minutes,staff_bonus_enabled,birthday_gift,birthday_gift_count,birthday_gift_label,clock_code_interval_minutes,ot_pay_policy,msg_quiet_start,msg_quiet_end,msg_frequency_cap,weekend_days,branding"),
                 .init(name: "id", value: "eq.\(venueID)"),
                 .init(name: "limit", value: "1"),
             ], accessToken: session.ownerToken)
@@ -83,6 +83,29 @@ extension OwnerService {
     func setClockInterval(venueID: String, minutes: Int) async throws -> DecideResult {
         struct P: Encodable { let pVenueId: String; let pMinutes: Int }
         return try await supabase.rpc("set_venue_clock_interval", params: P(pVenueId: venueID, pMinutes: minutes), accessToken: session.ownerToken)
+    }
+
+    /// Overtime pay policy: "off" | "approval" | "auto".
+    @discardableResult
+    func setOTPolicy(venueID: String, policy: String) async throws -> DecideResult {
+        struct P: Encodable { let pVenueId: String; let pPolicy: String }
+        return try await supabase.rpc("set_venue_ot_policy", params: P(pVenueId: venueID, pPolicy: policy), accessToken: session.ownerToken)
+    }
+
+    /// Campaign quiet hours (0…23) + max marketing messages / member / 30d (1…20).
+    @discardableResult
+    func setMessaging(venueID: String, quietStart: Int, quietEnd: Int, frequencyCap: Int) async throws -> DecideResult {
+        struct P: Encodable { let pVenueId: String; let pQuietStart: Int; let pQuietEnd: Int; let pFrequencyCap: Int }
+        return try await supabase.rpc("set_venue_messaging",
+                                      params: P(pVenueId: venueID, pQuietStart: quietStart, pQuietEnd: quietEnd, pFrequencyCap: frequencyCap),
+                                      accessToken: session.ownerToken)
+    }
+
+    /// Weekend (pay-premium) days as weekday ints (0=Sun … 6=Sat).
+    @discardableResult
+    func setWeekendDays(venueID: String, days: [Int]) async throws -> DecideResult {
+        struct P: Encodable { let pVenueId: String; let pDays: [Int] }
+        return try await supabase.rpc("set_venue_weekend_days", params: P(pVenueId: venueID, pDays: days), accessToken: session.ownerToken)
     }
 
     @discardableResult

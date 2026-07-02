@@ -204,6 +204,11 @@ struct VenueConfig: Decodable, Hashable {
     let birthdayGiftCount: Int?
     let birthdayGiftLabel: String?
     let clockCodeIntervalMinutes: Int?
+    let otPayPolicy: String?
+    let msgQuietStart: Int?
+    let msgQuietEnd: Int?
+    let msgFrequencyCap: Int?
+    let weekendDays: [Int]?
     let branding: BrandingBlob?
 }
 

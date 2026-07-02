@@ -21,6 +21,11 @@ final class SettingsViewModel {
     // operations
     var repeatApproval = 10
     var clockInterval = 30
+    var otPolicy = "approval"
+    var quietStart = 22
+    var quietEnd = 8
+    var frequencyCap = 2
+    var weekendDays: Set<Int> = [0, 6]
     var staffBonus = false
     var birthdayGift = "none"
     var birthdayCount = 1
@@ -50,6 +55,11 @@ final class SettingsViewModel {
         if let cfg = try? await service.venueConfig(venueID: venueID) {
             repeatApproval = cfg.repeatStampApprovalMinutes ?? 10
             clockInterval = cfg.clockCodeIntervalMinutes ?? 30
+            otPolicy = cfg.otPayPolicy ?? "approval"
+            quietStart = cfg.msgQuietStart ?? 22
+            quietEnd = cfg.msgQuietEnd ?? 8
+            frequencyCap = cfg.msgFrequencyCap ?? 2
+            weekendDays = Set(cfg.weekendDays ?? [0, 6])
             staffBonus = cfg.staffBonusEnabled ?? false
             birthdayGift = cfg.birthdayGift ?? "none"
             birthdayCount = cfg.birthdayGiftCount ?? 1
@@ -80,6 +90,9 @@ final class SettingsViewModel {
         await run(String(localized: "settings.saved", defaultValue: "Saved")) {
             _ = try await service.setRepeatApproval(venueID: v, minutes: repeatApproval)
             _ = try await service.setClockInterval(venueID: v, minutes: clockInterval)
+            _ = try await service.setOTPolicy(venueID: v, policy: otPolicy)
+            _ = try await service.setMessaging(venueID: v, quietStart: quietStart, quietEnd: quietEnd, frequencyCap: frequencyCap)
+            _ = try await service.setWeekendDays(venueID: v, days: weekendDays.sorted())
             _ = try await service.setStaffBonus(venueID: v, enabled: staffBonus)
             _ = try await service.setBirthdayGift(venueID: v, gift: birthdayGift, count: birthdayCount,
                                                   label: birthdayGift == "treat" ? birthdayLabel : nil)
@@ -143,6 +156,29 @@ struct SettingsView: View {
             Section("Operations") {
                 Stepper("Repeat-stamp approval: \(vm.repeatApproval) min", value: $vm.repeatApproval, in: 0...240, step: 5)
                 Stepper("Clock-in code changes every: \(vm.clockInterval) min", value: $vm.clockInterval, in: 15...120, step: 5)
+
+                Picker("Overtime pay", selection: $vm.otPolicy) {
+                    Text("Off — never pay OT").tag("off")
+                    Text("Approved only").tag("approval")
+                    Text("Auto — pay all OT").tag("auto")
+                }
+                Stepper("Quiet hours start: \(vm.quietStart):00", value: $vm.quietStart, in: 0...23)
+                Stepper("Quiet hours end: \(vm.quietEnd):00", value: $vm.quietEnd, in: 0...23)
+                Stepper("Max messages / member / 30d: \(vm.frequencyCap)", value: $vm.frequencyCap, in: 1...20)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Weekend (pay-premium) days").font(.subheadline)
+                    HStack(spacing: 6) {
+                        ForEach(Array(["Su","Mo","Tu","We","Th","Fr","Sa"].enumerated()), id: \.offset) { d, label in
+                            Button(label) {
+                                if vm.weekendDays.contains(d) { vm.weekendDays.remove(d) } else { vm.weekendDays.insert(d) }
+                            }
+                            .font(.caption.weight(.semibold))
+                            .buttonStyle(.bordered)
+                            .tint(vm.weekendDays.contains(d) ? Brand.orange : Brand.stone500)
+                        }
+                    }
+                }
                 Toggle("Allow staff bonus stamps", isOn: $vm.staffBonus)
                 Picker("Birthday gift", selection: $vm.birthdayGift) {
                     Text("None").tag("none"); Text("Bonus stamps").tag("stamps"); Text("Treat").tag("treat")

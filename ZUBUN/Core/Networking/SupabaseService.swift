@@ -57,6 +57,17 @@ final class SupabaseService {
         _ = try? await session.data(for: req)
     }
 
+    /// Change the signed-in user's password (GoTrue PUT /auth/v1/user).
+    func updatePassword(_ newPassword: String, accessToken: String) async throws {
+        struct Body: Encodable { let password: String }
+        struct Ignore: Decodable {}
+        var req = authRequest(path: "auth/v1/user", method: "PUT")
+        req.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder.zubun.encode(Body(password: newPassword))
+        let _: Ignore = try await decode(req, as: Ignore.self)
+    }
+
     // MARK: - RPC (RLS-scoped)
 
     /// Calls a Postgres RPC (no params) and decodes the JSON result.

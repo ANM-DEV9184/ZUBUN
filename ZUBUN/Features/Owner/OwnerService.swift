@@ -238,6 +238,12 @@ extension OwnerService {
 
     // MARK: - Managers (owner-only, Standard/Multi)
 
+    /// Change the signed-in owner/manager's own password.
+    func changePassword(new: String) async throws {
+        guard let token = session.ownerToken else { throw APIError.notConfigured("Not signed in.") }
+        try await supabase.updatePassword(new, accessToken: token)
+    }
+
     func managers() async throws -> [Manager] {
         let res: ManagersResponse = try await api.get("/api/owner/managers", auth: .owner)
         return res.managers

@@ -61,6 +61,12 @@ struct OwnerMoreView: View {
             if let banner { Section { Text(banner).foregroundStyle(.secondary) } }
 
             Section {
+                NavigationLink { OwnerChangePasswordView() } label: {
+                    Label("Change password", systemImage: "key.fill")
+                }
+            }
+
+            Section {
                 Button(role: .destructive) {
                     Task {
                         await OwnerService().signOut()
@@ -101,5 +107,52 @@ struct OwnerMoreView: View {
         } message: {
             Text("This requests permanent deletion of your account and data. This can't be undone.")
         }
+    }
+}
+
+/// Change the signed-in owner/manager password (managers start on a temp one).
+struct OwnerChangePasswordView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var newPassword = ""
+    @State private var confirm = ""
+    @State private var banner: (InlineBanner.Kind, String)?
+    @State private var saving = false
+
+    private var valid: Bool { newPassword.count >= 8 && newPassword == confirm }
+
+    var body: some View {
+        Form {
+            Section {
+                SecureField("New password (min 8)", text: $newPassword)
+                    .textContentType(.newPassword)
+                SecureField("Confirm password", text: $confirm)
+                    .textContentType(.newPassword)
+            } footer: {
+                Text("Use at least 8 characters.", comment: "Password rule")
+            }
+
+            if let banner { Section { InlineBanner(kind: banner.0, message: banner.1) } }
+
+            Section {
+                Button {
+                    Task {
+                        saving = true; defer { saving = false }
+                        do {
+                            try await OwnerService().changePassword(new: newPassword)
+                            banner = (.info, String(localized: "pw.changed", defaultValue: "Password updated."))
+                            newPassword = ""; confirm = ""
+                        } catch let e as APIError {
+                            banner = (.error, e.errorDescription ?? "Couldn't update password")
+                        } catch {
+                            banner = (.error, error.localizedDescription)
+                        }
+                    }
+                } label: {
+                    HStack { if saving { ProgressView() }; Text("Update password") }
+                }
+                .disabled(!valid || saving)
+            }
+        }
+        .navigationTitle(Text("Change password", comment: "Change password title"))
     }
 }

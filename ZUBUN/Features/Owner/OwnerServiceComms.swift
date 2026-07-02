@@ -18,7 +18,7 @@ extension OwnerService {
         guard let mid = merchantID else { return nil }
         let rows: [MerchantPlan] = try await supabase.restGet("merchants",
             query: [
-                .init(name: "select", value: "plan_tier,billing_status"),
+                .init(name: "select", value: "plan_tier,billing_status,marketing_msgs_used"),
                 .init(name: "id", value: "eq.\(mid)"),
                 .init(name: "limit", value: "1"),
             ], accessToken: session.ownerToken)

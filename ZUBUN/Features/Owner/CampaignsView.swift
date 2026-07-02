@@ -2,9 +2,10 @@
 //  CampaignsView.swift
 //  ZUBUN
 //
-//  Owner → Campaigns (spec C12): compose + send WhatsApp broadcasts. Gated to
-//  Standard+ on an active paid plan (enforced client-side; `enqueue_campaign`
-//  also meters the marketing allowance server-side).
+//  Owner → Campaigns (spec C12): compose + send venue-scoped in-app push
+//  broadcasts (members get a notification that deep-links to that venue's card).
+//  Gated to Standard+ on an active paid plan (enforced client-side;
+//  `enqueue_campaign` also meters the monthly campaign allowance server-side).
 //
 
 import SwiftUI
@@ -48,7 +49,7 @@ final class CampaignsViewModel {
         let res = try? await service.sendCampaign(id: c.id)
         switch res?.result {
         case "enqueued": banner = (.info, String(localized: "campaign.sent", defaultValue: "Sending to \(res?.enqueued ?? 0) members"))
-        case "over_limit": banner = (.warning, String(localized: "campaign.over", defaultValue: "Marketing allowance reached"))
+        case "over_limit": banner = (.warning, String(localized: "campaign.over", defaultValue: "Monthly campaign allowance reached"))
         case "venue_paused": banner = (.warning, ResultCode.programPaused.userMessage)
         default: banner = (.warning, res?.result ?? "Couldn't send")
         }
@@ -68,10 +69,25 @@ struct CampaignsView: View {
             } else if !vm.canUse {
                 EmptyStateView(systemImage: "lock.fill",
                                title: String(localized: "campaign.locked", defaultValue: "Campaigns need Standard+"),
-                               message: String(localized: "campaign.locked.detail", defaultValue: "Upgrade to an active Standard or Multi plan to send WhatsApp broadcasts."))
+                               message: String(localized: "campaign.locked.detail", defaultValue: "Upgrade to an active Standard or Multi plan to send push broadcasts to your members."))
             } else {
                 List {
                     if let banner = vm.banner { Section { InlineBanner(kind: banner.0, message: banner.1) } }
+                    if let plan = vm.plan {
+                        Section {
+                            HStack {
+                                Label(String(localized: "campaign.channel", defaultValue: "In-app push"), systemImage: "bell.badge.fill")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                                Spacer()
+                                Text("\(plan.campaignsRemaining) / \(plan.campaignAllowance) left")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(plan.campaignsRemaining == 0 ? Brand.warning : Brand.orange)
+                            }
+                        } footer: {
+                            Text("Members get a notification that opens this venue's card. Resets monthly.",
+                                 comment: "Campaign channel footer")
+                        }
+                    }
                     ForEach(vm.campaigns) { c in
                         HStack {
                             VStack(alignment: .leading, spacing: 3) {

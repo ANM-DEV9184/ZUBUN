@@ -229,11 +229,26 @@ struct CreateVenueResult: Decodable {
 struct MerchantPlan: Decodable {
     let planTier: String?
     let billingStatus: String?
+    let marketingMsgsUsed: Int?
 
     /// Campaigns require Standard+ AND an active paid plan.
     var canUseCampaigns: Bool {
         let rank = ["starter": 0, "standard": 1, "multi": 2]
         return (rank[planTier ?? "starter"] ?? 0) >= 1 && billingStatus == "active"
+    }
+
+    /// Monthly campaign (marketing) allowance for the plan — the soft cap.
+    var campaignAllowance: Int {
+        switch planTier {
+        case "multi": return 1800
+        case "standard": return 600
+        default: return 200
+        }
+    }
+
+    /// Campaign sends still available this month.
+    var campaignsRemaining: Int {
+        max(0, campaignAllowance - (marketingMsgsUsed ?? 0))
     }
 }
 

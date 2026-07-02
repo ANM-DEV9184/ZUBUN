@@ -71,6 +71,20 @@ struct CustomerSettingsView: View {
 
             #if DEBUG
             DebugPushTokenRow()
+            Section("Debug") {
+                Button {
+                    Task {
+                        do {
+                            let res = try await service.sendTestPush()
+                            banner = res.summary
+                        } catch let e as APIError {
+                            banner = e.errorDescription ?? "Test push failed"
+                        } catch {
+                            banner = error.localizedDescription
+                        }
+                    }
+                } label: { Label("Send test push", systemImage: "paperplane") }
+            }
             #endif
         }
         .navigationTitle(Text("Settings", comment: "Customer settings title"))

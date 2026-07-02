@@ -58,6 +58,13 @@ struct CustomerService {
         return true
     }
 
+    /// DEBUG self-test: push a test notification to this customer's own devices.
+    /// Returns per-device APNs status so a bad .p8/env is visible immediately.
+    func sendTestPush() async throws -> TestPushResult {
+        struct Empty: Encodable {}
+        return try await api.post("/api/customer/notifications/test", body: Empty(), auth: .customer)
+    }
+
     // MARK: - Actions
 
     /// `mobile` is captured for the owner's/venue's reference (offline outreach) —

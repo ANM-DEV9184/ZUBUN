@@ -28,7 +28,14 @@ final class StaffMgmtViewModel {
     }
 
     func add(name: String) async {
-        guard let v = venueID, name.count >= 2 else { return }
+        guard let v = venueID else {
+            banner = (.error, String(localized: "staff.novenue", defaultValue: "Select a venue first, then add staff."))
+            return
+        }
+        guard name.count >= 2 else {
+            banner = (.error, String(localized: "staff.shortname", defaultValue: "Enter a name (at least 2 letters)."))
+            return
+        }
         do {
             let invite = try await service.addStaff(venueID: v, name: name)
             inviteURL = invite.inviteUrl

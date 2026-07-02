@@ -71,7 +71,38 @@ struct ClockResult: Decodable {
     let paidMinutes: Int?
     let overtimeMinutes: Int?
     let lateMinutes: Int?
+    let earlyLeaveMinutes: Int?
 }
+
+/// One row of the staffer's own schedule (GET /api/staff/shifts).
+struct StaffShift: Decodable, Identifiable {
+    let id: String
+    let workDate: String        // "2026-07-02"
+    let startTime: String?      // "08:00:00" — nil on an off day
+    let endTime: String?
+    let isOff: Bool
+    let leaveType: String?
+    let unpaidBreakMinutes: Int?
+
+    /// "08:00–16:00", or the leave/off label.
+    var displayTimes: String {
+        if isOff { return (leaveType.map { $0.capitalized } ?? "Day off") }
+        guard let s = startTime, let e = endTime else { return "—" }
+        return "\(String(s.prefix(5)))–\(String(e.prefix(5)))"
+    }
+
+    /// "Thu 2 Jul" for the row label.
+    var dateLabel: String {
+        let inF = DateFormatter(); inF.calendar = Calendar(identifier: .gregorian)
+        inF.dateFormat = "yyyy-MM-dd"; inF.timeZone = TimeZone(identifier: "Asia/Dubai")
+        guard let d = inF.date(from: workDate) else { return workDate }
+        let out = DateFormatter(); out.dateFormat = "EEE d MMM"
+        out.timeZone = TimeZone(identifier: "Asia/Dubai")
+        return out.string(from: d)
+    }
+}
+
+struct StaffShiftsResponse: Decodable { let shifts: [StaffShift] }
 
 /// `GET /api/staff/shift-stats` — exact keys from the `staff_shift_stats` RPC
 /// (+ `overtime_until` appended by the route). Verified against the backend.

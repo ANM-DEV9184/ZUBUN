@@ -61,9 +61,11 @@ struct StaffService {
         return try await api.post("/api/staff/clock-in", body: Body(code: code), auth: .staff)
     }
 
-    func clockOut(code: String) async throws -> ClockResult {
-        struct Body: Encodable { let code: String }
-        return try await api.post("/api/staff/clock-out", body: Body(code: code), auth: .staff)
+    /// Clock-out no longer needs the rotating code — the selfie is the presence
+    /// proof. Returns early_leave_minutes so the app can warn on an early exit.
+    func clockOut() async throws -> ClockResult {
+        struct Body: Encodable {}
+        return try await api.post("/api/staff/clock-out", body: Body(), auth: .staff)
     }
 
     func breakAction(_ action: String, code: String) async throws -> ResultEnvelope {
@@ -129,5 +131,11 @@ struct StaffService {
 
     func shiftStats() async throws -> ShiftStats {
         try await api.get("/api/staff/shift-stats", auth: .staff)
+    }
+
+    /// The staffer's own upcoming schedule.
+    func shifts() async throws -> [StaffShift] {
+        let res: StaffShiftsResponse = try await api.get("/api/staff/shifts", auth: .staff)
+        return res.shifts
     }
 }

@@ -11,6 +11,7 @@ import SwiftUI
 
 struct ShiftsView: View {
     @State private var stats: ShiftStats?
+    @State private var shifts: [StaffShift] = []
     @State private var showRequests = false
     @State private var showAccess = false
     private let service = StaffService()
@@ -26,6 +27,23 @@ struct ShiftsView: View {
                 HStack(spacing: 12) {
                     StatCard(value: stats?.venueToday, label: String(localized: "stats.venue", defaultValue: "Venue today"))
                     StatCard(value: stats?.rank(forName: myName), label: String(localized: "stats.rank", defaultValue: "My rank"))
+                }
+
+                if !shifts.isEmpty {
+                    CardContainer {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("My schedule", comment: "Staff schedule title").font(.brandHeadline())
+                            ForEach(shifts.prefix(10)) { s in
+                                HStack {
+                                    Text(s.dateLabel)
+                                    Spacer()
+                                    Text(s.displayTimes)
+                                        .foregroundStyle(s.isOff ? Color.secondary : Brand.ink)
+                                }
+                                .font(.subheadline)
+                            }
+                        }
+                    }
                 }
 
                 if let board = stats?.leaderboard, !board.isEmpty {
@@ -58,10 +76,17 @@ struct ShiftsView: View {
         }
         .background(Brand.stone.ignoresSafeArea())
         .navigationTitle(Text("Activity", comment: "Activity tab title"))
-        .task { stats = try? await service.shiftStats() }
-        .refreshable { stats = try? await service.shiftStats() }
+        .task { await load() }
+        .refreshable { await load() }
         .sheet(isPresented: $showRequests) { NavigationStack { RequestsView() } }
         .sheet(isPresented: $showAccess) { AccessRequestSheet().presentationDetents([.medium]) }
+    }
+
+    private func load() async {
+        async let s = service.shiftStats()
+        async let sh = service.shifts()
+        stats = try? await s
+        shifts = (try? await sh) ?? []
     }
 }
 

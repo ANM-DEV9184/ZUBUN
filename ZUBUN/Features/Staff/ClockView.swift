@@ -35,8 +35,35 @@ final class ClockViewModel {
         await punch({ try await service.clockIn(code: code) }, selfie: "in")
     }
 
+    /// Clock-out needs no code — the mandatory selfie is the presence proof.
+    /// Warns (never blocks) if leaving before the scheduled shift end.
     func clockOut() async {
-        await punch({ try await service.clockOut(code: code) }, selfie: "out")
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let res = try await service.clockOut()
+            switch res.result {
+            case .clockedOut:
+                isClockedIn = false
+                code = ""
+                pendingSelfie = "out"   // required — capture the clock-out selfie
+                if let early = res.earlyLeaveMinutes, early > 0 {
+                    banner = (.warning, "Clocked out \(early) min before your shift ends — this is logged for your manager.")
+                } else {
+                    banner = (.info, res.result.userMessage)
+                }
+                await load()
+            case .notClockedIn:
+                isClockedIn = false
+                banner = (.warning, res.result.userMessage)
+            default:
+                banner = (.error, res.result.userMessage)
+            }
+        } catch let APIError.result(c) {
+            banner = (.error, c.userMessage)
+        } catch {
+            banner = (.error, error.localizedDescription)
+        }
     }
 
     func startBreak() async { await simpleBreak("start") }

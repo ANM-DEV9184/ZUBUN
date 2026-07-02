@@ -127,6 +127,50 @@ struct Manager: Decodable, Identifiable {
 
 struct ManagersResponse: Decodable { let managers: [Manager] }
 
+// MARK: - Analytics (venue_kpis / venue_daily_stats)
+
+struct VenueKPIs: Decodable {
+    let members: Int?
+    let activeCards: Int?
+    let stampsToday: Int?
+    let stamps7d: Int?
+    let stamps30d: Int?
+    let stampsPrev30d: Int?
+    let rewardsIssued30d: Int?
+    let rewardsRedeemed30d: Int?
+    let newMembers7d: Int?
+    let newMembersPrev7d: Int?
+
+    /// Percent change vs the previous window (nil when the base is 0).
+    static func delta(_ current: Int?, _ previous: Int?) -> Int? {
+        guard let p = previous, p > 0, let c = current else { return nil }
+        return Int((Double(c - p) / Double(p) * 100).rounded())
+    }
+    var stampsDelta: Int? { Self.delta(stamps30d, stampsPrev30d) }
+    var newMembersDelta: Int? { Self.delta(newMembers7d, newMembersPrev7d) }
+    var redemptionRate: Int? {
+        guard let issued = rewardsIssued30d, issued > 0, let red = rewardsRedeemed30d else { return nil }
+        return Int((Double(red) / Double(issued) * 100).rounded())
+    }
+}
+
+/// One day of venue_daily_stats.
+struct DailyStat: Decodable, Identifiable {
+    let day: String
+    let stamps: Int?
+    let rewards: Int?
+    let redemptions: Int?
+    let newMembers: Int?
+    var id: String { day }
+
+    /// Parsed date for charting (Dubai).
+    var date: Date {
+        let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"; f.timeZone = TimeZone(identifier: "Asia/Dubai")
+        return f.date(from: day) ?? Date()
+    }
+}
+
 struct ManagerInviteResult: Decodable {
     let email: String?
     let tempPassword: String?

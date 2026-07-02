@@ -19,6 +19,18 @@ extension OwnerService {
         return try await supabase.rpc("owner_feedback_summary", params: P(pVenueId: venueID), accessToken: session.ownerToken)
     }
 
+    /// Per-venue KPIs (trends, reward funnel) for the analytics overview.
+    func venueKPIs(venueID: String) async throws -> VenueKPIs {
+        struct P: Encodable { let pVenueId: String }
+        return try await supabase.rpc("venue_kpis", params: P(pVenueId: venueID), accessToken: session.ownerToken)
+    }
+
+    /// Per-day series (stamps / rewards / redemptions / new members) for charts.
+    func venueDailyStats(venueID: String, days: Int = 30) async throws -> [DailyStat] {
+        struct P: Encodable { let pVenueId: String; let pDays: Int }
+        return try await supabase.rpc("venue_daily_stats", params: P(pVenueId: venueID, pDays: days), accessToken: session.ownerToken)
+    }
+
     /// Per-staff performance (issuance + attendance) over a Dubai date range.
     func staffPerformance(venueID: String, from: String, to: String) async throws -> [StaffPerformance] {
         struct P: Encodable { let pVenueId: String; let pFrom: String; let pTo: String }

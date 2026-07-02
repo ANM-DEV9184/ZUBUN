@@ -8,6 +8,14 @@
 
 import SwiftUI
 import Observation
+import Charts
+
+enum TrendMetric: String, CaseIterable, Identifiable {
+    case stamps = "Stamps"
+    case newMembers = "New members"
+    case rewards = "Rewards"
+    var id: String { rawValue }
+}
 
 @MainActor
 @Observable
@@ -15,9 +23,28 @@ final class OwnerDashboardViewModel {
     var kpis: OwnerKPIs?
     var approvals: [StampApproval] = []
     var billing: MerchantPlan?
+    var venueKPIs: VenueKPIs?
+    var daily: [DailyStat] = []
+    var metric: TrendMetric = .stamps
     var isLoading = false
     var error: String?
     private let service = OwnerService()
+
+    /// Per-venue analytics for the trends section (charts + reward funnel).
+    func loadVenue(_ venueID: String) async {
+        async let k = service.venueKPIs(venueID: venueID)
+        async let d = service.venueDailyStats(venueID: venueID, days: 30)
+        venueKPIs = try? await k
+        daily = (try? await d) ?? []
+    }
+
+    func value(_ s: DailyStat) -> Int {
+        switch metric {
+        case .stamps: return s.stamps ?? 0
+        case .newMembers: return s.newMembers ?? 0
+        case .rewards: return s.rewards ?? 0
+        }
+    }
 
     /// A dunning banner to show on the overview, if any.
     var billingWarning: (InlineBanner.Kind, String)? {
@@ -61,6 +88,7 @@ final class OwnerDashboardViewModel {
 
 struct OwnerDashboardView: View {
     @State private var vm = OwnerDashboardViewModel()
+    @State private var context = OwnerContext.shared
     private let session = SessionStore.shared
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
@@ -78,6 +106,8 @@ struct OwnerDashboardView: View {
                     KPITile(title: "Stamps today", value: vm.kpis?.stampsToday)
                     KPITile(title: "Stamps 30d", value: vm.kpis?.stamps30d)
                 }
+
+                trendsSection
 
                 if let error = vm.error { InlineBanner(kind: .warning, message: error) }
 
@@ -97,12 +127,98 @@ struct OwnerDashboardView: View {
         .background(Brand.stone.ignoresSafeArea())
         .navigationTitle(Text("Dashboard", comment: "Owner dashboard title"))
         .toolbar {
+            VenueSwitcher(context: context)
             ToolbarItem(placement: .primaryAction) {
                 Button("Sign out") { Task { await OwnerService().signOut(); OwnerContext.shared.reset() } }
             }
         }
-        .refreshable { await vm.load() }
+        .refreshable {
+            await vm.load()
+            if let v = context.selectedVenueID { await vm.loadVenue(v) }
+        }
         .task { await vm.load() }
+        .task(id: context.selectedVenueID) {
+            await context.loadVenues()
+            if let v = context.selectedVenueID { await vm.loadVenue(v) }
+        }
+    }
+
+    // MARK: - Trends (Swift Charts)
+
+    @ViewBuilder
+    private var trendsSection: some View {
+        if let k = vm.venueKPIs {
+            HStack(spacing: 12) {
+                TrendBadge(label: "Stamps · 30d", value: k.stamps30d ?? 0, delta: k.stampsDelta)
+                TrendBadge(label: "New members · 7d", value: k.newMembers7d ?? 0, delta: k.newMembersDelta)
+            }
+        }
+
+        CardContainer {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Last 30 days", comment: "Trends chart title").font(.brandHeadline())
+                Picker("Metric", selection: $vm.metric) {
+                    ForEach(TrendMetric.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+
+                if vm.daily.isEmpty {
+                    Text("No activity yet.", comment: "Empty chart")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 140)
+                } else {
+                    Chart(vm.daily) { s in
+                        BarMark(
+                            x: .value("Day", s.date, unit: .day),
+                            y: .value(vm.metric.rawValue, vm.value(s))
+                        )
+                        .foregroundStyle(Brand.orange)
+                    }
+                    .frame(height: 180)
+                    .chartXAxis {
+                        AxisMarks(values: .stride(by: .day, count: 7)) {
+                            AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                        }
+                    }
+                }
+            }
+        }
+
+        if let k = vm.venueKPIs {
+            CardContainer {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Rewards · 30 days", comment: "Reward funnel title").font(.brandHeadline())
+                    LabeledContent("Issued", value: "\(k.rewardsIssued30d ?? 0)")
+                    LabeledContent("Redeemed", value: "\(k.rewardsRedeemed30d ?? 0)")
+                    if let rate = k.redemptionRate {
+                        LabeledContent("Redemption rate", value: "\(rate)%")
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct TrendBadge: View {
+    let label: String
+    let value: Int
+    let delta: Int?
+    var body: some View {
+        CardContainer {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("\(value)").font(.brandTitle()).foregroundStyle(Brand.ink)
+                HStack(spacing: 6) {
+                    Text(label).font(.caption).foregroundStyle(.secondary)
+                    if let d = delta {
+                        Label("\(abs(d))%", systemImage: d >= 0 ? "arrow.up.right" : "arrow.down.right")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(d >= 0 ? Brand.success : Brand.danger)
+                            .labelStyle(.titleAndIcon)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 

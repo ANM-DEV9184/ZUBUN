@@ -234,6 +234,7 @@ struct ComposeCampaignSheet: View {
     private var audienceHelp: String {
         let s = recipe.segment
         if s.newWithin != nil { return "Members who joined recently — a warm welcome." }
+        if s.goldOnly == true { return "Only your Gold-tier members — your very top guests (30+ lifetime stamps)." }
         if s.champion == true { return "Your loyal members — Silver & Gold tier, earned automatically from lifetime visits (10+ / 30+ stamps)." }
         if s.atRisk == true { return "Members whose last visit was 2–4 weeks ago — nudge them before they drift." }
         if s.birthdayToday == true { return "Members whose birthday is today." }

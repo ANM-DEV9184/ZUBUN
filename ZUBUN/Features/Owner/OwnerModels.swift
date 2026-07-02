@@ -342,6 +342,7 @@ struct CampaignSegmentDef: Codable, Hashable {
     var daysInactive: Int?
     var newWithin: Int?
     var champion: Bool?
+    var goldOnly: Bool?
     var atRisk: Bool?
     var birthdayToday: Bool?
     var birthdayWithin: Int?
@@ -353,6 +354,7 @@ struct CampaignSegmentDef: Codable, Hashable {
         if all == true { return "All members" }
         if let d = daysInactive { return "Haven't visited in \(d)+ days" }
         if let n = newWithin { return "New members (last \(n) days)" }
+        if goldOnly == true { return "VIPs (Gold tier)" }
         if champion == true { return "Regulars / VIPs" }
         if atRisk == true { return "Slipping away" }
         if birthdayToday == true { return "Birthday today" }
@@ -403,6 +405,9 @@ struct CampaignRecipe: Identifiable, Hashable {
         .init(id: "vip", title: "VIP thank-you", icon: "star.fill",
               segment: .init(champion: true),
               message: "Thanks for being one of our regulars at {{1}} 💛 Here's a little something for you."),
+        .init(id: "goldvip", title: "Gold VIP treat", icon: "crown.fill",
+              segment: .init(goldOnly: true),
+              message: "You're one of our top guests at {{1}} 👑 Enjoy something special on us."),
         .init(id: "atrisk", title: "Win them back", icon: "clock.arrow.circlepath",
               segment: .init(atRisk: true),
               message: "It's been a little while! Pop into {{1}} this week — your stamps are waiting."),

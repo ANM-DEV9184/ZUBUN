@@ -14,6 +14,11 @@ import Foundation
 
 extension OwnerService {
 
+    func feedbackSummary(venueID: String) async throws -> FeedbackSummary {
+        struct P: Encodable { let pVenueId: String }
+        return try await supabase.rpc("owner_feedback_summary", params: P(pVenueId: venueID), accessToken: session.ownerToken)
+    }
+
     func merchantPlan() async throws -> MerchantPlan? {
         guard let mid = merchantID else { return nil }
         let rows: [MerchantPlan] = try await supabase.restGet("merchants",

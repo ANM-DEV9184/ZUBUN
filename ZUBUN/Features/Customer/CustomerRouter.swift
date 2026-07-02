@@ -10,6 +10,7 @@
 
 import Foundation
 import Observation
+import UserNotifications
 
 enum CustomerTab: Hashable {
     case cards, join, inbox, settings
@@ -56,7 +57,10 @@ final class CustomerRouter {
 
     /// Refresh the unread badge (cheap; called on session start + push tap).
     func refreshUnread() async {
-        if let res = try? await service.notifications() { unread = res.unread }
+        if let res = try? await service.notifications() {
+            unread = res.unread
+            try? await UNUserNotificationCenter.current().setBadgeCount(res.unread)
+        }
     }
 
     /// Parse a `zubun://venue/<id>` deep link into a venue id.

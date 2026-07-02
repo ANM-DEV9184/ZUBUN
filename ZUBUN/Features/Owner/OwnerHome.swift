@@ -42,6 +42,7 @@ struct OwnerMoreView: View {
                 NavigationLink { SettingsView() } label: { Label("Settings & venues", systemImage: "gearshape") }
                 NavigationLink { PayrollView() } label: { Label("Payroll", systemImage: "banknote") }
                 NavigationLink { CampaignsView() } label: { Label("Campaigns", systemImage: "megaphone") }
+                NavigationLink { FeedbackView() } label: { Label("Feedback", systemImage: "star.bubble") }
                 NavigationLink { BillingView() } label: { Label("Billing", systemImage: "creditcard") }
                 NavigationLink { SupportView() } label: { Label("Support", systemImage: "bubble.left.and.bubble.right") }
             }

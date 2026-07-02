@@ -173,6 +173,24 @@ struct StaffColleague: Decodable, Identifiable {
 
 struct StaffColleaguesResponse: Decodable { let colleagues: [StaffColleague] }
 
+// MARK: - Owner feedback / NPS (owner_feedback_summary)
+
+struct FeedbackComment: Decodable, Identifiable {
+    let score: Int?
+    let comment: String?
+    let at: String?
+    var id: String { (at ?? "") + "-" + (comment ?? "") }
+}
+
+struct FeedbackSummary: Decodable {
+    let count: Int?
+    let avg: Double?
+    let promoters: Int?
+    let detractors: Int?
+    let dist: [String: Int]?
+    let recentLow: [FeedbackComment]?
+}
+
 /// `GET /api/staff/shift-stats` — exact keys from the `staff_shift_stats` RPC
 /// (+ `overtime_until` appended by the route). Verified against the backend.
 ///

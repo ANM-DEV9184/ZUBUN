@@ -16,8 +16,10 @@ final class StaffMgmtViewModel {
     var staff: [OwnerStaff] = []
     var isLoading = false
     var banner: (InlineBanner.Kind, String)?
-    /// Most recent invite link to share/copy after adding a staffer.
+    /// Most recent invite link to share/copy after adding a staffer, plus who
+    /// it's for (the link is single-use and tied to that one staffer).
     var inviteURL: String?
+    var inviteName: String?
     private var venueID: String?
     private let service = OwnerService()
 
@@ -42,7 +44,8 @@ final class StaffMgmtViewModel {
         do {
             let invite = try await service.addStaff(venueID: v, name: name)
             inviteURL = invite.inviteUrl
-            banner = (.info, String(localized: "staff.added", defaultValue: "Added — share the invite so they can set a PIN."))
+            inviteName = name
+            banner = (.info, String(localized: "staff.added", defaultValue: "\(name) added — now share their personal invite so they can set a PIN."))
             await load(venueID: v)
         } catch let e as APIError {
             banner = (.error, e.errorDescription ?? "Couldn't add staff")
@@ -68,9 +71,41 @@ struct StaffManagementView: View {
             if let banner = vm.banner { Section { InlineBanner(kind: banner.0, message: banner.1) } }
 
             if let invite = vm.inviteURL, let url = URL(string: invite) {
-                Section(String(localized: "staff.invite", defaultValue: "Invite link")) {
-                    Text(invite).font(.caption).textSelection(.enabled).foregroundStyle(.secondary)
-                    ShareLink(item: url) { Label("Share invite", systemImage: "square.and.arrow.up") }
+                let who = vm.inviteName ?? String(localized: "staff.thisperson", defaultValue: "this staffer")
+                let venue = context.selectedVenue?.name ?? ""
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label {
+                            Text("\(who)'s personal invite", comment: "Invite header with name")
+                                .font(.headline)
+                        } icon: {
+                            Image(systemName: "person.crop.circle.badge.checkmark").foregroundStyle(Brand.orange)
+                        }
+
+                        Text("This link is just for \(who). Send it only to them — they open it once to set their own PIN, then it stops working. It can't be reused by anyone else.",
+                             comment: "Invite explanation")
+                            .font(.caption).foregroundStyle(.secondary)
+
+                        ShareLink(
+                            item: url,
+                            subject: Text("Your ZUBUN staff invite", comment: "Invite share subject"),
+                            message: Text("Hi \(who), here's your personal link to join \(venue) on ZUBUN. Tap it to set your PIN and start clocking in — it's just for you.", comment: "Invite share message")
+                        ) {
+                            Label("Share \(who)'s invite", systemImage: "square.and.arrow.up")
+                                .font(.subheadline.weight(.semibold))
+                        }
+
+                        Text(invite)
+                            .font(.caption2).foregroundStyle(.tertiary)
+                            .textSelection(.enabled)
+                            .lineLimit(1).truncationMode(.middle)
+                    }
+                    .padding(.vertical, 2)
+                } header: {
+                    Text("Staff invite", comment: "Invite section header")
+                } footer: {
+                    Text("Tip: the person you just added shows as “Pending” below until they open the link and set a PIN.",
+                         comment: "Invite section footer")
                 }
             }
 

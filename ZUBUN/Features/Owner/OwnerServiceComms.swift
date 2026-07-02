@@ -19,6 +19,14 @@ extension OwnerService {
         return try await supabase.rpc("owner_feedback_summary", params: P(pVenueId: venueID), accessToken: session.ownerToken)
     }
 
+    /// Per-staff performance (issuance + attendance) over a Dubai date range.
+    func staffPerformance(venueID: String, from: String, to: String) async throws -> [StaffPerformance] {
+        struct P: Encodable { let pVenueId: String; let pFrom: String; let pTo: String }
+        return try await supabase.rpc("owner_staff_performance",
+                                      params: P(pVenueId: venueID, pFrom: from, pTo: to),
+                                      accessToken: session.ownerToken)
+    }
+
     func merchantPlan() async throws -> MerchantPlan? {
         guard let mid = merchantID else { return nil }
         let rows: [MerchantPlan] = try await supabase.restGet("merchants",

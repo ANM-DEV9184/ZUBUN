@@ -191,6 +191,23 @@ struct FeedbackSummary: Decodable {
     let recentLow: [FeedbackComment]?
 }
 
+/// One row of owner_staff_performance (issuance + attendance over a date range).
+struct StaffPerformance: Decodable, Identifiable {
+    let staffId: String
+    let name: String?
+    let status: String?
+    let stamps: Int?
+    let manual: Int?
+    let manualShare: Int?
+    let workedMinutes: Int?
+    let overtimeMinutes: Int?
+    let lateMinutes: Int?
+    let noShows: Int?
+    let daysWorked: Int?
+    var id: String { staffId }
+    var displayName: String { name ?? "Staff" }
+}
+
 /// `GET /api/staff/shift-stats` — exact keys from the `staff_shift_stats` RPC
 /// (+ `overtime_until` appended by the route). Verified against the backend.
 ///

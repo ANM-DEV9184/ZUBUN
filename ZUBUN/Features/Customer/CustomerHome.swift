@@ -29,6 +29,8 @@ struct CustomerHome: View {
         }
         .tint(Brand.orange)
         .task {
+            // Refresh the access token first so an expired JWT doesn't blank the wallet.
+            await CustomerService().refreshCustomerSession()
             await PushManager.shared.onActiveSession()
             await router.refreshUnread()
         }

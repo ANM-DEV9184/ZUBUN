@@ -33,11 +33,11 @@ final class SupabaseService {
         let _: EmptyResponse = try await authPost("otp", body: Body(email: email, createUser: true))
     }
 
-    func verifyEmailOTP(email: String, code: String) async throws -> String {
+    func verifyEmailOTP(email: String, code: String) async throws -> AuthTokens {
         struct Body: Encodable { let type: String; let email: String; let token: String }
         let res: TokenResponse = try await authPost("verify",
                                                      body: Body(type: "email", email: email, token: code))
-        return res.accessToken
+        return AuthTokens(accessToken: res.accessToken, refreshToken: res.refreshToken)
     }
 
     // MARK: - Owner email/password

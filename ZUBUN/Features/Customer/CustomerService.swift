@@ -20,8 +20,23 @@ struct CustomerService {
     }
 
     func verifyOTP(email: String, code: String) async throws {
-        let token = try await supabase.verifyEmailOTP(email: email, code: code)
-        session.saveCustomerToken(token)
+        let tokens = try await supabase.verifyEmailOTP(email: email, code: code)
+        session.saveCustomerToken(tokens.accessToken, refresh: tokens.refreshToken)
+    }
+
+    /// Refresh the customer access token from the stored refresh token so an
+    /// expired JWT doesn't blank the wallet. Runs at customer-app launch. No-op
+    /// (returns false) if there's no refresh token yet.
+    @discardableResult
+    func refreshCustomerSession() async -> Bool {
+        guard let refresh = session.customerRefreshToken else { return false }
+        do {
+            let tokens = try await supabase.refreshSession(refreshToken: refresh)
+            session.saveCustomerToken(tokens.accessToken, refresh: tokens.refreshToken ?? refresh)
+            return true
+        } catch {
+            return false
+        }
     }
 
     func signOut() async {

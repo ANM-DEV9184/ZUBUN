@@ -28,6 +28,7 @@ final class SessionStore {
     private enum Key {
         static let staff = "zubun.session.staff"
         static let customerToken = "zubun.session.customer"   // Supabase access token
+        static let customerRefresh = "zubun.session.customer.refresh" // Supabase refresh token
         static let ownerToken = "zubun.session.owner"         // Supabase access token
         static let ownerRefresh = "zubun.session.owner.refresh" // Supabase refresh token
         static let lastRole = "zubun.session.lastRole"
@@ -70,16 +71,19 @@ final class SessionStore {
 
     // MARK: Customer / Owner (Supabase access tokens)
 
-    func saveCustomerToken(_ token: String) {
+    func saveCustomerToken(_ token: String, refresh: String? = nil) {
         Keychain.set(token, for: Key.customerToken)
+        if let refresh { Keychain.set(refresh, for: Key.customerRefresh) }
         hasCustomerSession = true
         lastRole = .customer
     }
 
     var customerToken: String? { Keychain.get(Key.customerToken) }
+    var customerRefreshToken: String? { Keychain.get(Key.customerRefresh) }
 
     func clearCustomer() {
         Keychain.remove(Key.customerToken)
+        Keychain.remove(Key.customerRefresh)
         hasCustomerSession = false
     }
 

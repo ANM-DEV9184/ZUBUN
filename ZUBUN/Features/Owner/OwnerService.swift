@@ -224,11 +224,26 @@ extension OwnerService {
     func venueStaff(venueID: String) async throws -> [OwnerStaff] {
         try await supabase.restGet("staff_users",
                                    query: [
-                                       .init(name: "select", value: "id,display_name,status"),
+                                       .init(name: "select", value: "id,display_name,status,onboarded"),
                                        .init(name: "venue_id", value: "eq.\(venueID)"),
                                        .init(name: "order", value: "display_name.asc"),
                                    ],
                                    accessToken: session.ownerToken)
+    }
+
+    /// Add a pending staffer; returns the onboarding invite link to share.
+    func addStaff(venueID: String, name: String) async throws -> StaffInvite {
+        struct Body: Encodable { let venueId: String; let displayName: String }
+        return try await api.post("/api/owner/staff-add",
+                                  body: Body(venueId: venueID, displayName: name), auth: .owner)
+    }
+
+    /// Suspend / reactivate a staffer (self-guarded RPC).
+    @discardableResult
+    func setStaffStatus(staffID: String, status: String) async throws -> DecideResult {
+        struct P: Encodable { let pStaffId: String; let pStatus: String }
+        return try await supabase.rpc("set_staff_status",
+                                      params: P(pStaffId: staffID, pStatus: status), accessToken: session.ownerToken)
     }
 
     func shifts(venueID: String, from: String, to: String) async throws -> [ShiftCell] {

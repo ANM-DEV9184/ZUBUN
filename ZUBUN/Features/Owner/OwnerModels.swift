@@ -103,8 +103,17 @@ struct OwnerStaff: Decodable, Identifiable, Hashable {
     let id: String
     let displayName: String?
     let status: String?
+    let onboarded: Bool?
     var isActive: Bool { status == "active" }
     var name: String { displayName ?? "Staff" }
+    /// Pending = created but hasn't set a PIN via their invite yet.
+    var isPending: Bool { onboarded == false }
+}
+
+/// Result of POST /api/owner/staff-add — the onboarding invite to share.
+struct StaffInvite: Decodable {
+    let id: String?
+    let inviteUrl: String?
 }
 
 /// A `staff_shifts` row (plain table CRUD).

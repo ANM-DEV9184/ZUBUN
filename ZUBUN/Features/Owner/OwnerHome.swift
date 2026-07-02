@@ -38,6 +38,7 @@ struct OwnerMoreView: View {
     var body: some View {
         List {
             Section {
+                NavigationLink { StaffManagementView() } label: { Label("Staff & join QR", systemImage: "person.2.badge.gearshape") }
                 NavigationLink { SettingsView() } label: { Label("Settings & venues", systemImage: "gearshape") }
                 NavigationLink { PayrollView() } label: { Label("Payroll", systemImage: "banknote") }
                 NavigationLink { CampaignsView() } label: { Label("Campaigns", systemImage: "megaphone") }

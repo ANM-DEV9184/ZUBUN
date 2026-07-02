@@ -42,6 +42,29 @@ struct CustomerService {
                           auth: .customer)
     }
 
+    // MARK: - Notification inbox
+
+    func notifications() async throws -> NotificationsResponse {
+        try await api.get("/api/customer/notifications", auth: .customer)
+    }
+
+    /// Mark one item read (`id`) or all unread items read (`id == nil`).
+    @discardableResult
+    func markNotificationRead(id: String?) async throws -> Bool {
+        struct Body: Encodable { let id: String? }
+        struct OK: Decodable {}
+        let _: OK = try await api.post("/api/customer/notifications/read",
+                                       body: Body(id: id), auth: .customer)
+        return true
+    }
+
+    /// DEBUG self-test: push a test notification to this customer's own devices.
+    /// Returns per-device APNs status so a bad .p8/env is visible immediately.
+    func sendTestPush() async throws -> TestPushResult {
+        struct Empty: Encodable {}
+        return try await api.post("/api/customer/notifications/test", body: Empty(), auth: .customer)
+    }
+
     // MARK: - Actions
 
     /// `mobile` is captured for the owner's/venue's reference (offline outreach) —

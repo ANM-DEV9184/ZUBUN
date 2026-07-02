@@ -235,3 +235,47 @@ struct StampApproval: Decodable, Identifiable {
         return "•••• " + phone.suffix(4)
     }
 }
+
+// MARK: - Notification inbox (GET /api/customer/notifications)
+
+/// One in-app notification (venue-scoped campaign push, mirrored to the inbox).
+struct CustomerNotification: Decodable, Identifiable {
+    let id: String
+    let venueId: String?
+    let membershipId: String?
+    let campaignId: String?
+    let category: String
+    let title: String
+    let body: String
+    let deepLink: String?
+    let readAt: String?        // ISO8601; nil = unread
+    let createdAt: String      // ISO8601
+
+    var isUnread: Bool { readAt == nil }
+}
+
+struct NotificationsResponse: Decodable {
+    let notifications: [CustomerNotification]
+    let unread: Int
+}
+
+/// Result of the DEBUG push self-test (POST /api/customer/notifications/test).
+struct TestPushResult: Decodable {
+    let devices: Int
+    let delivered: Int
+    let results: [Device]
+
+    struct Device: Decodable {
+        let status: Int
+        let ok: Bool
+        let reason: String?
+    }
+
+    /// One-line summary for the debug banner.
+    var summary: String {
+        if devices == 0 { return "No device registered — enable notifications, then relaunch." }
+        let reasons = results.compactMap { $0.reason }.joined(separator: ", ")
+        let base = "\(delivered)/\(devices) delivered"
+        return reasons.isEmpty ? base : "\(base) · \(reasons)"
+    }
+}

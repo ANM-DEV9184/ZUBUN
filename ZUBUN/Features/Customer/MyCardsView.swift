@@ -28,6 +28,7 @@ final class WalletViewModel {
 
 struct MyCardsView: View {
     @State private var vm = WalletViewModel()
+    @State private var router = CustomerRouter.shared
 
     var body: some View {
         ScrollView {
@@ -61,7 +62,13 @@ struct MyCardsView: View {
             CardDetailView(membershipID: id)
         }
         .refreshable { await vm.load() }
-        .task { await vm.load() }
+        .task {
+            await vm.load()
+            router.resolvePending(using: vm.cards)
+        }
+        .onChange(of: router.pendingVenueID) { _, _ in
+            router.resolvePending(using: vm.cards)
+        }
     }
 }
 

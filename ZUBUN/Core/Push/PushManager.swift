@@ -45,6 +45,18 @@ final class PushManager {
         Task { await syncTokenWithBackend() }
     }
 
+    /// Route a tapped notification. Prefers the explicit `venue_id`, falling back
+    /// to parsing a `zubun://venue/<id>` deep link. Refreshes the inbox badge.
+    func handleNotificationTap(_ userInfo: [AnyHashable: Any]) {
+        if let venueID = userInfo["venue_id"] as? String, !venueID.isEmpty {
+            CustomerRouter.shared.openVenue(venueID: venueID)
+        } else if let link = userInfo["deep_link"] as? String,
+                  let venueID = CustomerRouter.venueID(fromDeepLink: link) {
+            CustomerRouter.shared.openVenue(venueID: venueID)
+        }
+        Task { await CustomerRouter.shared.refreshUnread() }
+    }
+
     /// Convenience for role Home screens: ask for permission (once) + push the
     /// token to the backend for whatever sessions are active.
     func onActiveSession() async {

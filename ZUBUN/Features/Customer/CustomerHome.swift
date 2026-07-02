@@ -40,11 +40,44 @@ struct CustomerHome: View {
 struct CustomerSettingsView: View {
     @State private var showDeleteConfirm = false
     @State private var banner: String?
+    @State private var bMonth = 1
+    @State private var bDay = 1
+    @State private var savingBirthday = false
     private let service = CustomerService()
     private let session = SessionStore.shared
 
     var body: some View {
         List {
+            Section {
+                Picker(String(localized: "settings.bday.month", defaultValue: "Month"), selection: $bMonth) {
+                    ForEach(1...12, id: \.self) { m in
+                        Text(Calendar.current.monthSymbols[m - 1]).tag(m)
+                    }
+                }
+                Picker(String(localized: "settings.bday.day", defaultValue: "Day"), selection: $bDay) {
+                    ForEach(1...31, id: \.self) { d in Text("\(d)").tag(d) }
+                }
+                Button {
+                    Task {
+                        savingBirthday = true; defer { savingBirthday = false }
+                        do {
+                            _ = try await service.setBirthday(month: bMonth, day: bDay)
+                            banner = String(localized: "settings.bday.saved", defaultValue: "Birthday saved 🎂")
+                        } catch let e as APIError {
+                            banner = e.errorDescription ?? "Couldn't save birthday"
+                        } catch { banner = error.localizedDescription }
+                    }
+                } label: {
+                    HStack { if savingBirthday { ProgressView() }; Text("Save birthday") }
+                }
+                .disabled(savingBirthday)
+            } header: {
+                Text("My birthday", comment: "Customer birthday section")
+            } footer: {
+                Text("Add your birthday so your favourite venues can surprise you. We only keep the day and month — never the year.",
+                     comment: "Customer birthday footer")
+            }
+
             Section(String(localized: "settings.privacy", defaultValue: "Privacy")) {
                 Button {
                     Task {

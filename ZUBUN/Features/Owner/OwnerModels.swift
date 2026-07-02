@@ -399,7 +399,7 @@ struct CampaignRecipe: Identifiable, Hashable {
               message: "Your birthday's coming up! 🎂 Drop by {{1}} this week for a birthday treat on us."),
         .init(id: "almostthere", title: "You're almost there", icon: "target",
               segment: .init(stampsToReward: 2),
-              message: "So close! Just one more stamp at {{1}} for your free reward. 🎁"),
+              message: "You're so close! Just a stamp or two at {{1}} and your free reward is yours. 🎁"),
         .init(id: "vip", title: "VIP thank-you", icon: "star.fill",
               segment: .init(champion: true),
               message: "Thanks for being one of our regulars at {{1}} 💛 Here's a little something for you."),

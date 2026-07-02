@@ -154,6 +154,15 @@ struct VenueKPIs: Decodable {
     }
 }
 
+/// One cell of venue_hourly_heatmap (busiest times).
+struct HeatCell: Decodable, Identifiable {
+    let weekday: Int   // 0=Sun … 6=Sat
+    let hour: Int
+    let count: Int
+    var id: String { "\(weekday)-\(hour)" }
+    var weekdayLabel: String { ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][max(0, min(6, weekday))] }
+}
+
 /// One day of venue_daily_stats.
 struct DailyStat: Decodable, Identifiable {
     let day: String

@@ -31,6 +31,12 @@ extension OwnerService {
         return try await supabase.rpc("venue_daily_stats", params: P(pVenueId: venueID, pDays: days), accessToken: session.ownerToken)
     }
 
+    /// Busiest-times heatmap (weekday × hour) for the last N days.
+    func venueHeatmap(venueID: String, days: Int = 30) async throws -> [HeatCell] {
+        struct P: Encodable { let pVenueId: String; let pDays: Int }
+        return try await supabase.rpc("venue_hourly_heatmap", params: P(pVenueId: venueID, pDays: days), accessToken: session.ownerToken)
+    }
+
     /// Per-staff performance (issuance + attendance) over a Dubai date range.
     func staffPerformance(venueID: String, from: String, to: String) async throws -> [StaffPerformance] {
         struct P: Encodable { let pVenueId: String; let pFrom: String; let pTo: String }

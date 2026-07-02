@@ -25,6 +25,7 @@ final class OwnerDashboardViewModel {
     var billing: MerchantPlan?
     var venueKPIs: VenueKPIs?
     var daily: [DailyStat] = []
+    var heat: [HeatCell] = []
     var metric: TrendMetric = .stamps
     var isLoading = false
     var error: String?
@@ -34,8 +35,10 @@ final class OwnerDashboardViewModel {
     func loadVenue(_ venueID: String) async {
         async let k = service.venueKPIs(venueID: venueID)
         async let d = service.venueDailyStats(venueID: venueID, days: 30)
+        async let h = service.venueHeatmap(venueID: venueID, days: 30)
         venueKPIs = try? await k
         daily = (try? await d) ?? []
+        heat = (try? await h) ?? []
     }
 
     func value(_ s: DailyStat) -> Int {
@@ -105,6 +108,26 @@ struct OwnerDashboardView: View {
                     KPITile(title: "Active cards", value: vm.kpis?.activeCards)
                     KPITile(title: "Stamps today", value: vm.kpis?.stampsToday)
                     KPITile(title: "Stamps 30d", value: vm.kpis?.stamps30d)
+                }
+
+                // Multi-venue rollup — compare venues (only when there's more than one).
+                if let pv = vm.kpis?.perVenue, pv.count > 1 {
+                    CardContainer {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Stamps by venue · 7 days", comment: "Multi-venue rollup title").font(.brandHeadline())
+                            Chart(pv) { v in
+                                BarMark(
+                                    x: .value("Stamps", v.stamps7d ?? 0),
+                                    y: .value("Venue", v.name)
+                                )
+                                .foregroundStyle(Brand.orange)
+                                .annotation(position: .trailing) {
+                                    Text("\(v.stamps7d ?? 0)").font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                            .frame(height: CGFloat(pv.count) * 40 + 16)
+                        }
+                    }
                 }
 
                 trendsSection
@@ -180,6 +203,29 @@ struct OwnerDashboardView: View {
                             AxisValueLabel(format: .dateTime.day().month(.abbreviated))
                         }
                     }
+                }
+            }
+        }
+
+        if !vm.heat.isEmpty {
+            CardContainer {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Busiest times · 30 days", comment: "Heatmap title").font(.brandHeadline())
+                    Chart(vm.heat) { c in
+                        RectangleMark(
+                            x: .value("Hour", c.hour),
+                            y: .value("Day", c.weekdayLabel)
+                        )
+                        .foregroundStyle(by: .value("Stamps", c.count))
+                    }
+                    .chartForegroundStyleScale(range: Gradient(colors: [Brand.stone500.opacity(0.15), Brand.orange]))
+                    .chartYScale(domain: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"])
+                    .chartXAxis {
+                        AxisMarks(values: [0, 6, 12, 18, 23]) { v in
+                            AxisValueLabel { if let h = v.as(Int.self) { Text("\(h)h") } }
+                        }
+                    }
+                    .frame(height: 200)
                 }
             }
         }

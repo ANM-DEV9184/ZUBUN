@@ -340,6 +340,27 @@ struct MerchantPlan: Decodable {
 struct CampaignSegmentDef: Codable, Hashable {
     var all: Bool?
     var daysInactive: Int?
+    var newWithin: Int?
+    var champion: Bool?
+    var atRisk: Bool?
+    var birthdayToday: Bool?
+    var birthdayWithin: Int?
+    var stampsToReward: Int?
+    var rewardUnredeemed: Bool?
+
+    /// Plain-language label an owner understands (no jargon).
+    var label: String {
+        if all == true { return "All members" }
+        if let d = daysInactive { return "Haven't visited in \(d)+ days" }
+        if let n = newWithin { return "New members (last \(n) days)" }
+        if champion == true { return "Regulars / VIPs" }
+        if atRisk == true { return "Slipping away" }
+        if birthdayToday == true { return "Birthday today" }
+        if let d = birthdayWithin { return d <= 7 ? "Birthday this week" : "Birthday in \(d) days" }
+        if let s = stampsToReward { return s <= 1 ? "One stamp from a reward" : "\(s) stamps from a reward" }
+        if rewardUnredeemed == true { return "Reward waiting to be claimed" }
+        return "All members"
+    }
 }
 
 struct CampaignRow: Decodable, Identifiable, Hashable {
@@ -347,14 +368,51 @@ struct CampaignRow: Decodable, Identifiable, Hashable {
     let name: String?
     let status: String?
     let segmentDef: CampaignSegmentDef?
+    let message: String?
     let scheduledAt: String?
     let createdAt: String?
 
-    var audienceLabel: String {
-        if segmentDef?.all == true { return "All members" }
-        if let d = segmentDef?.daysInactive { return "Lapsed \(d)d+" }
-        return "—"
-    }
+    var audienceLabel: String { segmentDef?.label ?? "All members" }
+}
+
+/// A one-tap campaign "recipe": a preset audience + a suggested (editable) push
+/// message. `{{1}}` in the message is replaced by the venue name at send time.
+struct CampaignRecipe: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let icon: String
+    let segment: CampaignSegmentDef
+    let message: String
+
+    /// Ordered list shown in the composer. "Custom" is first (blank canvas).
+    static let all: [CampaignRecipe] = [
+        .init(id: "custom", title: "Custom message", icon: "square.and.pencil",
+              segment: .init(all: true), message: ""),
+        .init(id: "winback", title: "We miss you", icon: "hand.wave.fill",
+              segment: .init(daysInactive: 30),
+              message: "We miss you at {{1}}! Come back this week and enjoy 10% off. ✨"),
+        .init(id: "welcome", title: "Welcome new members", icon: "sparkles",
+              segment: .init(newWithin: 7),
+              message: "Welcome to {{1}}! 🙌 Collect a stamp on every visit and earn free rewards. See you soon!"),
+        .init(id: "birthday", title: "Birthday treat", icon: "gift.fill",
+              segment: .init(birthdayWithin: 7),
+              message: "Your birthday's coming up! 🎂 Drop by {{1}} this week for a birthday treat on us."),
+        .init(id: "almostthere", title: "You're almost there", icon: "target",
+              segment: .init(stampsToReward: 2),
+              message: "So close! Just one more stamp at {{1}} for your free reward. 🎁"),
+        .init(id: "vip", title: "VIP thank-you", icon: "star.fill",
+              segment: .init(champion: true),
+              message: "Thanks for being one of our regulars at {{1}} 💛 Here's a little something for you."),
+        .init(id: "atrisk", title: "Win them back", icon: "clock.arrow.circlepath",
+              segment: .init(atRisk: true),
+              message: "It's been a little while! Pop into {{1}} this week — your stamps are waiting."),
+        .init(id: "rewardready", title: "Reward reminder", icon: "bell.badge.fill",
+              segment: .init(rewardUnredeemed: true),
+              message: "Don't forget — your free reward at {{1}} is ready to claim! 🎉"),
+        .init(id: "slowday", title: "Slow-day boost", icon: "bolt.fill",
+              segment: .init(all: true),
+              message: "Today only at {{1}}: double stamps on every visit! ⚡️"),
+    ]
 }
 
 struct TemplateRow: Decodable, Identifiable, Hashable {

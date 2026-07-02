@@ -59,7 +59,7 @@ extension OwnerService {
     func campaigns(venueID: String) async throws -> [CampaignRow] {
         try await supabase.restGet("campaigns",
             query: [
-                .init(name: "select", value: "id,name,status,segment_def,scheduled_at,created_at"),
+                .init(name: "select", value: "id,name,status,segment_def,message,scheduled_at,created_at"),
                 .init(name: "venue_id", value: "eq.\(venueID)"),
                 .init(name: "order", value: "created_at.desc"),
                 .init(name: "limit", value: "50"),
@@ -78,17 +78,16 @@ extension OwnerService {
         return rows.filter { $0.isApproved }
     }
 
-    func createCampaign(venueID: String, name: String, templateID: String,
-                        segment: String, daysInactive: Int) async throws {
+    /// Creates a draft campaign from a free-typed push message + a preset audience.
+    /// (Templates are no longer required — push has no template-approval friction.)
+    func createCampaign(venueID: String, name: String, message: String,
+                        segment: CampaignSegmentDef) async throws {
         struct Row: Encodable {
-            let venueId: String; let name: String; let templateId: String
+            let venueId: String; let name: String; let message: String
             let segmentDef: CampaignSegmentDef; let status: String
         }
-        let seg = segment == "lapsed"
-            ? CampaignSegmentDef(all: nil, daysInactive: daysInactive)
-            : CampaignSegmentDef(all: true, daysInactive: nil)
         try await supabase.restInsert("campaigns",
-            body: Row(venueId: venueID, name: name, templateId: templateID, segmentDef: seg, status: "draft"),
+            body: Row(venueId: venueID, name: name, message: message, segmentDef: segment, status: "draft"),
             accessToken: session.ownerToken)
     }
 

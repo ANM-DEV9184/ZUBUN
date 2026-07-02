@@ -17,6 +17,7 @@ struct JoinVenueView: View {
     @State private var showScanner = false
     @State private var banner: (InlineBanner.Kind, String)?
     @State private var loading = false
+    @State private var router = CustomerRouter.shared
     private let service = CustomerService()
 
     var body: some View {
@@ -59,6 +60,17 @@ struct JoinVenueView: View {
                 if case let .joinVenue(id) = code { venueID = id }
                 showScanner = false
             }
+        }
+        .task { consumePendingJoin() }
+        .onChange(of: router.pendingJoinVenueID) { _, _ in consumePendingJoin() }
+    }
+
+    /// Pre-fill the venue id from a universal-link open (survives login since the
+    /// router is a singleton).
+    private func consumePendingJoin() {
+        if let vid = router.pendingJoinVenueID {
+            venueID = vid
+            router.pendingJoinVenueID = nil
         }
     }
 

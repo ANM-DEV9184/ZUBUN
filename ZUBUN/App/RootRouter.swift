@@ -51,6 +51,16 @@ struct RootRouter: View {
         }
         .animation(.snappy, value: reachability.isOnline)
         .onAppear(perform: resumeIfPossible)
+        .onOpenURL(perform: handleURL)
+    }
+
+    /// A scanned/tapped `https://zubun.io/j/<venue>` universal link opens the app
+    /// straight to the customer Join flow with the venue pre-filled.
+    private func handleURL(_ url: URL) {
+        guard case let .joinVenue(venueID) = QRParser.parse(url.absoluteString) else { return }
+        CustomerRouter.shared.pendingJoinVenueID = venueID
+        CustomerRouter.shared.tab = .join
+        selectedRole = .customer
     }
 
     /// Wraps a login screen with a "back to roles" affordance.

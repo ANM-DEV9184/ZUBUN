@@ -27,6 +27,8 @@ final class CustomerRouter {
     var cardPath: [String] = []
     /// A venue we've been asked to open but haven't resolved to a card yet.
     var pendingVenueID: String?
+    /// A venue to pre-fill in the Join tab (from a scanned universal link).
+    var pendingJoinVenueID: String?
     /// Unread inbox count for the tab badge.
     var unread: Int = 0
 

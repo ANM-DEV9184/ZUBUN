@@ -236,6 +236,24 @@ extension OwnerService {
                                       params: P(pStaffId: staffID, pStatus: status), accessToken: session.ownerToken)
     }
 
+    // MARK: - Managers (owner-only, Standard/Multi)
+
+    func managers() async throws -> [Manager] {
+        let res: ManagersResponse = try await api.get("/api/owner/managers", auth: .owner)
+        return res.managers
+    }
+
+    func inviteManager(email: String) async throws -> ManagerInviteResult {
+        struct Body: Encodable { let email: String }
+        return try await api.post("/api/owner/managers", body: Body(email: email), auth: .owner)
+    }
+
+    func removeManager(authUserID: String) async throws {
+        struct Body: Encodable { let authUserId: String }
+        struct OK: Decodable {}
+        let _: OK = try await api.delete("/api/owner/managers", body: Body(authUserId: authUserID), auth: .owner)
+    }
+
     func shifts(venueID: String, from: String, to: String) async throws -> [ShiftCell] {
         try await supabase.restGet("staff_shifts",
                                    query: [

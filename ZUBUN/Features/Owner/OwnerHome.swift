@@ -34,13 +34,23 @@ struct OwnerHome: View {
 struct OwnerMoreView: View {
     @State private var showDelete = false
     @State private var banner: String?
+    @State private var session = SessionStore.shared
 
     var body: some View {
         List {
+            if session.isManager {
+                Section { Label("Manager access", systemImage: "person.badge.shield.checkmark")
+                    .font(.subheadline).foregroundStyle(.secondary) }
+            }
+
             Section {
                 NavigationLink { StaffManagementView() } label: { Label("Staff & join QR", systemImage: "person.2.badge.gearshape") }
                 NavigationLink { StaffPerformanceView() } label: { Label("Staff performance", systemImage: "chart.bar.xaxis") }
-                NavigationLink { SettingsView() } label: { Label("Settings & venues", systemImage: "gearshape") }
+                // Owner-only configuration.
+                if !session.isManager {
+                    NavigationLink { SettingsView() } label: { Label("Settings & venues", systemImage: "gearshape") }
+                    NavigationLink { ManagersView() } label: { Label("Managers", systemImage: "person.2") }
+                }
                 NavigationLink { PayrollView() } label: { Label("Payroll", systemImage: "banknote") }
                 NavigationLink { CampaignsView() } label: { Label("Campaigns", systemImage: "megaphone") }
                 NavigationLink { FeedbackView() } label: { Label("Feedback", systemImage: "star.bubble") }
@@ -61,13 +71,15 @@ struct OwnerMoreView: View {
                 }
             }
 
-            Section {
-                Button(role: .destructive) { showDelete = true } label: {
-                    Label("Delete account", systemImage: "trash")
+            if !session.isManager {
+                Section {
+                    Button(role: .destructive) { showDelete = true } label: {
+                        Label("Delete account", systemImage: "trash")
+                    }
+                } footer: {
+                    Text("Sends a deletion request for your merchant account and data (UAE PDPL).",
+                         comment: "Owner deletion footer")
                 }
-            } footer: {
-                Text("Sends a deletion request for your merchant account and data (UAE PDPL).",
-                     comment: "Owner deletion footer")
             }
 
             #if DEBUG

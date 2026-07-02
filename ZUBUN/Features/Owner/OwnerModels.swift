@@ -116,6 +116,23 @@ struct StaffInvite: Decodable {
     let inviteUrl: String?
 }
 
+// MARK: - Managers (RBAC v1)
+
+struct Manager: Decodable, Identifiable {
+    let id: String
+    let authUserId: String
+    let email: String
+    let createdAt: String?
+}
+
+struct ManagersResponse: Decodable { let managers: [Manager] }
+
+struct ManagerInviteResult: Decodable {
+    let email: String?
+    let tempPassword: String?
+    let emailed: Bool?
+}
+
 /// A `staff_shifts` row (plain table CRUD).
 struct ShiftCell: Decodable, Identifiable, Hashable {
     let id: String

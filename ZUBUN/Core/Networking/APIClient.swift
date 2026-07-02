@@ -54,6 +54,14 @@ struct APIClient {
         try await send(path, method: "POST", query: [], body: body, auth: auth)
     }
 
+    /// DELETE with a JSON body (used by owner manager removal).
+    @discardableResult
+    func delete<Body: Encodable, Response: Decodable>(
+        _ path: String, body: Body, auth: AuthMode = .none, as type: Response.Type = Response.self
+    ) async throws -> Response {
+        try await send(path, method: "DELETE", query: [], body: body, auth: auth)
+    }
+
     // MARK: Core
 
     private func send<Body: Encodable, Response: Decodable>(

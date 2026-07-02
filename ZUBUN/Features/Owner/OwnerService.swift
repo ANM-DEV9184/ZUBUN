@@ -53,17 +53,14 @@ struct OwnerService {
 
     /// Approve/deny a repeat stamp (spec C3).
     ///
-    /// NOTE: `decide_stamp_approval` takes `p_app_secret` (the server HMAC_SECRET)
-    /// used to encrypt a reward token when an approval *completes* a card. The app
-    /// doesn't hold that secret, so we pass empty — fine for the common case
-    /// (approving/denying a mid-card stamp). Reward-completing approvals should go
-    /// through a bearer-accepting server route (backend follow-up).
+    /// Routed through the bearer server route so the server HMAC_SECRET encrypts
+    /// the reward token when an approval *completes* a card (the app can't hold
+    /// the secret). The RPC still self-guards on venue ownership.
     @discardableResult
     func decideStampApproval(requestID: String, approve: Bool) async throws -> DecideResult {
-        struct Params: Encodable { let pRequestId: String; let pApprove: Bool; let pAppSecret: String }
-        return try await supabase.rpc("decide_stamp_approval",
-                                      params: Params(pRequestId: requestID, pApprove: approve, pAppSecret: ""),
-                                      accessToken: session.ownerToken)
+        struct Body: Encodable { let requestId: String; let approve: Bool }
+        return try await api.post("/api/owner/stamp-approval",
+                                  body: Body(requestId: requestID, approve: approve), auth: .owner)
     }
 }
 
@@ -142,20 +139,13 @@ extension OwnerService {
 
     /// Grant bonus stamps (owner source — bypasses the daily cap).
     ///
-    /// CAVEAT: like `decide_stamp_approval`, `grant_bonus_stamps` takes the server
-    /// `p_app_secret` used to encrypt a reward token IF the grant completes a card.
-    /// The app can't hold that secret, so we pass empty — fine for adding stamps
-    /// mid-card; a grant that *completes* a reward should go through a server route.
+    /// Routed through the bearer server route so a grant that *completes* a card
+    /// mints the encrypted reward token with the server HMAC_SECRET.
     @discardableResult
     func grantStamps(membershipID: String, count: Int, reason: String) async throws -> GrantResult {
-        struct Params: Encodable {
-            let pMembershipId: String; let pCount: Int; let pReason: String
-            let pSource: String; let pAppSecret: String
-        }
-        return try await supabase.rpc("grant_bonus_stamps",
-                                      params: Params(pMembershipId: membershipID, pCount: count,
-                                                     pReason: reason, pSource: "owner", pAppSecret: ""),
-                                      accessToken: session.ownerToken)
+        struct Body: Encodable { let membershipId: String; let count: Int; let reason: String }
+        return try await api.post("/api/owner/grant-stamps",
+                                  body: Body(membershipId: membershipID, count: count, reason: reason), auth: .owner)
     }
 
     // MARK: Approval queue readers

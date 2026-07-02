@@ -13,6 +13,7 @@ import SwiftUI
 struct BillingView: View {
     @State private var plan: MerchantPlan?
     @State private var isLoading = true
+    @State private var loadFailed = false
     private let service = OwnerService()
 
     private var tierLabel: String { (plan?.planTier ?? "—").capitalized }
@@ -20,6 +21,13 @@ struct BillingView: View {
 
     var body: some View {
         List {
+            if loadFailed && plan == nil {
+                Section {
+                    InlineBanner(kind: .error, message: String(localized: "billing.load_failed", defaultValue: "Couldn't load your plan."))
+                    Button("Retry") { Task { await load() } }
+                }
+            }
+
             Section(String(localized: "billing.current_plan", defaultValue: "Current plan")) {
                 LabeledContent(String(localized: "billing.plan", defaultValue: "Plan"), value: tierLabel)
                 LabeledContent(String(localized: "billing.status", defaultValue: "Status"), value: statusLabel)
@@ -44,10 +52,18 @@ struct BillingView: View {
         }
         .navigationTitle(Text("Billing", comment: "Billing title"))
         .overlay { if isLoading && plan == nil { LoadingState() } }
-        .task {
-            plan = try? await service.merchantPlan()
-            isLoading = false
+        .task { await load() }
+    }
+
+    private func load() async {
+        isLoading = true; loadFailed = false
+        do {
+            plan = try await service.merchantPlan()
+            loadFailed = (plan == nil)
+        } catch {
+            loadFailed = true
         }
+        isLoading = false
     }
 
     private func planFeatures(_ tier: String?) -> [String] {

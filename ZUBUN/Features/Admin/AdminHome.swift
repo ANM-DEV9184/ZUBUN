@@ -10,6 +10,7 @@ import SwiftUI
 import Observation
 
 struct AdminHome: View {
+    @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         TabView {
             NavigationStack { AdminDashboardView() }
@@ -24,6 +25,10 @@ struct AdminHome: View {
                 .tabItem { Label("Audit", systemImage: "list.bullet.rectangle.fill") }
         }
         .tint(Brand.orange)
+        .task { await OwnerService().refreshOwnerSession() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await OwnerService().refreshOwnerSession() } }
+        }
     }
 }
 

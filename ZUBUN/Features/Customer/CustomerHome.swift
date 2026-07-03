@@ -10,6 +10,7 @@ import SwiftUI
 
 struct CustomerHome: View {
     @State private var router = CustomerRouter.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView(selection: $router.tab) {
@@ -33,6 +34,11 @@ struct CustomerHome: View {
             await CustomerService().refreshCustomerSession()
             await PushManager.shared.onActiveSession()
             await router.refreshUnread()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await CustomerService().refreshCustomerSession(); await router.refreshUnread() }
+            }
         }
     }
 }

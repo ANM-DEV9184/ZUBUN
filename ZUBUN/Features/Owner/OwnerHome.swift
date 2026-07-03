@@ -9,6 +9,7 @@ import SwiftUI
 
 struct OwnerHome: View {
     @State private var context = OwnerContext.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView {
@@ -30,6 +31,11 @@ struct OwnerHome: View {
             await OwnerService().refreshOwnerSession()
             await context.loadVenues()
             await PushManager.shared.onActiveSession()
+        }
+        // Returning from a long background → refresh the token so the first
+        // action doesn't hit an expired JWT.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await OwnerService().refreshOwnerSession() } }
         }
     }
 }

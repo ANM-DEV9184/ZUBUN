@@ -18,6 +18,8 @@ enum ScannedCode: Equatable {
     case reward(qr: String)
     /// A venue id extracted from a /j/<venueId> join link or raw UUID.
     case joinVenue(venueID: String)
+    /// A staff onboarding token from a /staff/onboard/<token> invite link.
+    case staffOnboard(token: String)
     case unknown(raw: String)
 }
 
@@ -30,6 +32,14 @@ enum QRParser {
         }
         if value.hasPrefix("dayem:r:") {
             return .reward(qr: value)
+        }
+
+        // Staff onboarding links such as https://zubun.io/staff/onboard/<token>
+        if let range = value.range(of: "/staff/onboard/") {
+            let tail = value[range.upperBound...]
+            let tok = tail.split(separator: "/").first.map(String.init) ?? String(tail)
+            let clean = tok.split(separator: "?").first.map(String.init) ?? tok
+            if !clean.isEmpty { return .staffOnboard(token: clean) }
         }
 
         // Join links such as https://zubun.io/j/<uuid>

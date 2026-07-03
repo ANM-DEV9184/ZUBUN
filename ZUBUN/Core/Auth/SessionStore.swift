@@ -36,6 +36,8 @@ final class SessionStore {
 
     // Mirrored, observable state for the UI/router.
     private(set) var staff: StaffSession?
+    /// A staff invite token from a tapped universal link, awaiting onboarding.
+    var pendingStaffInvite: String?
     private(set) var hasCustomerSession: Bool = false
     private(set) var hasOwnerSession: Bool = false
     var lastRole: AppRole? {

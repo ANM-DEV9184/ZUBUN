@@ -8,6 +8,11 @@
 
 import Foundation
 
+enum StaffOnboardOutcome {
+    case signedIn(StaffAuthResponse)
+    case alreadyOnboarded(venueID: String)
+}
+
 struct StaffService {
     var api = APIClient()
 
@@ -25,6 +30,39 @@ struct StaffService {
         return try await api.post("/api/auth/staff-onboard",
                                   body: Body(token: token, pin: pin),
                                   auth: .deviceOnly)
+    }
+
+    /// Onboard, but surface the "already set a PIN" case (with its venue) instead
+    /// of a plain error — so the app can switch a web-first staffer to PIN sign-in.
+    func onboardOutcome(token: String, pin: String) async throws -> StaffOnboardOutcome {
+        let url = AppConfig.apiBaseURL.appendingPathComponent("api/auth/staff-onboard")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(DeviceID.current, forHTTPHeaderField: "X-Device-Id")
+        struct Body: Encodable { let token: String; let pin: String }
+        req.httpBody = try JSONEncoder.zubun.encode(Body(token: token, pin: pin))
+
+        let (data, resp): (Data, URLResponse)
+        do { (data, resp) = try await URLSession.shared.data(for: req) }
+        catch { throw APIError.offline }
+        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+
+        struct Lenient: Decodable {
+            let ok: Bool?; let staffId: String?; let displayName: String?
+            let venueId: String?; let token: String?; let expiresAt: String?; let error: String?
+        }
+        let b = try? JSONDecoder.zubun.decode(Lenient.self, from: data)
+
+        if (200..<300).contains(status), b?.ok == true,
+           let sid = b?.staffId, let name = b?.displayName, let vid = b?.venueId, let tok = b?.token {
+            return .signedIn(StaffAuthResponse(ok: true, staffId: sid, displayName: name,
+                                               venueId: vid, token: tok, expiresAt: b?.expiresAt))
+        }
+        if b?.error == "already_onboarded", let vid = b?.venueId {
+            return .alreadyOnboarded(venueID: vid)
+        }
+        throw APIError.server(status: status, code: b?.error, message: nil)
     }
 
     func logout() async {

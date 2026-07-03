@@ -10,8 +10,11 @@ import SwiftUI
 
 struct StaffLoginView: View {
     @State private var vm = StaffAuthViewModel()
+    @State private var session = SessionStore.shared
     @State private var showVenueScanner = false
     @State private var showOnboard = false
+    @State private var onboardToken = ""
+    @State private var pinHint = false
     var onAuthenticated: () -> Void = {}
 
     var body: some View {
@@ -20,6 +23,11 @@ struct StaffLoginView: View {
                 header
 
                 if vm.hasRememberedVenue {
+                    if pinHint {
+                        InlineBanner(kind: .info,
+                                     message: String(localized: "login.already_pin",
+                                                     defaultValue: "You've already set your PIN — just enter it below to sign in."))
+                    }
                     // Returning staff on a device already bound to a venue → PIN only.
                     CardContainer {
                         VStack(alignment: .leading, spacing: 14) {
@@ -88,8 +96,20 @@ struct StaffLoginView: View {
             }
         }
         .sheet(isPresented: $showOnboard) {
-            StaffOnboardView(onDone: { showOnboard = false; onAuthenticated() })
+            StaffOnboardView(initialInvite: onboardToken,
+                             onDone: { showOnboard = false; onAuthenticated() },
+                             onAlreadyOnboarded: { showOnboard = false; pinHint = true })
         }
+        .onAppear { consumePendingInvite() }
+        .onChange(of: session.pendingStaffInvite) { _, _ in consumePendingInvite() }
+    }
+
+    /// A tapped invite universal link lands here → open onboarding with the token.
+    private func consumePendingInvite() {
+        guard let token = session.pendingStaffInvite else { return }
+        onboardToken = token
+        session.pendingStaffInvite = nil
+        showOnboard = true
     }
 
     @ViewBuilder private var errorBanner: some View {
@@ -125,9 +145,16 @@ struct StaffLoginView: View {
 /// (spec B1). Binds the device on success.
 struct StaffOnboardView: View {
     @State private var vm = StaffAuthViewModel()
-    @State private var invite = ""
+    @State private var invite: String
     var onDone: () -> Void
+    var onAlreadyOnboarded: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
+
+    init(initialInvite: String = "", onDone: @escaping () -> Void, onAlreadyOnboarded: @escaping () -> Void = {}) {
+        _invite = State(initialValue: initialInvite)
+        self.onDone = onDone
+        self.onAlreadyOnboarded = onAlreadyOnboarded
+    }
 
     /// Accepts a full `/staff/onboard/<token>` link or a bare token.
     private var token: String {
@@ -157,7 +184,11 @@ struct StaffOnboardView: View {
                 }
                 Section {
                     Button {
-                        Task { await vm.onboard(token: token); if SessionStore.shared.staff != nil { onDone() } }
+                        Task {
+                            await vm.onboard(token: token)
+                            if SessionStore.shared.staff != nil { onDone() }
+                            else if vm.becameAlreadyOnboarded { onAlreadyOnboarded(); dismiss() }
+                        }
                     } label: {
                         HStack { if vm.isLoading { ProgressView() }; Text("Set up & sign in") }
                     }

@@ -49,7 +49,7 @@ final class ScannerViewModel {
             Task { await stamp(qr: qr) }
         case .reward(let qr):
             Task { await redeem(qr: qr) }
-        case .joinVenue, .unknown:
+        case .joinVenue, .staffOnboard, .unknown:
             present(.init(tone: .error,
                           title: String(localized: "scan.unknown", defaultValue: "Not a ZUBUN code"),
                           detail: nil, progress: nil))

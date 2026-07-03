@@ -58,10 +58,18 @@ struct RootRouter: View {
     /// A scanned/tapped `https://zubun.io/j/<venue>` universal link opens the app
     /// straight to the customer Join flow with the venue pre-filled.
     private func handleURL(_ url: URL) {
-        guard case let .joinVenue(venueID) = QRParser.parse(url.absoluteString) else { return }
-        CustomerRouter.shared.pendingJoinVenueID = venueID
-        CustomerRouter.shared.tab = .join
-        selectedRole = .customer
+        switch QRParser.parse(url.absoluteString) {
+        case let .joinVenue(venueID):
+            CustomerRouter.shared.pendingJoinVenueID = venueID
+            CustomerRouter.shared.tab = .join
+            selectedRole = .customer
+        case let .staffOnboard(token):
+            // A tapped staff invite → open the app straight into staff onboarding.
+            session.pendingStaffInvite = token
+            selectedRole = .staff
+        default:
+            break
+        }
     }
 
     /// Wraps a login screen with a "back to roles" affordance.
@@ -117,7 +125,9 @@ struct StaffLockView: View {
                 Task { await attempt() }
             }
             .padding(.horizontal, 40)
-            Button("Sign out instead", role: .destructive) { onSignOut() }.font(.subheadline)
+            Button(role: .destructive) { onSignOut() } label: {
+                Text("Sign out instead", comment: "Lock screen sign-out")
+            }.font(.subheadline)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

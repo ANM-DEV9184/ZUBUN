@@ -27,8 +27,17 @@ final class StaffAuthViewModel {
     var hasRememberedVenue: Bool { session.lastStaffVenueID != nil }
     var rememberedName: String? { session.lastStaffName }
 
+    /// Set true when onboarding found an already-set PIN → caller shows PIN login.
+    var becameAlreadyOnboarded = false
+
+    /// The venue to log in against — the typed field, else the device's remembered one.
+    private var effectiveVenue: String {
+        let typed = venueID.trimmingCharacters(in: .whitespaces)
+        return typed.isEmpty ? (session.lastStaffVenueID ?? "") : typed
+    }
+
     var canSubmitLogin: Bool {
-        QRParser.isUUID(venueID.trimmingCharacters(in: .whitespaces)) && Validation.isValidPIN(pin)
+        QRParser.isUUID(effectiveVenue) && Validation.isValidPIN(pin)
     }
 
     /// Forget the bound venue (e.g. this is a different person/venue on the device).
@@ -43,7 +52,7 @@ final class StaffAuthViewModel {
             return
         }
         await run {
-            let res = try await service.login(venueID: venueID.trimmingCharacters(in: .whitespaces), pin: pin)
+            let res = try await service.login(venueID: effectiveVenue, pin: pin)
             try persist(res)
         }
     }
@@ -55,8 +64,15 @@ final class StaffAuthViewModel {
             return
         }
         await run {
-            let res = try await service.onboard(token: token, pin: pin)
-            try persist(res)
+            switch try await service.onboardOutcome(token: token, pin: pin) {
+            case .signedIn(let res):
+                try persist(res)
+            case .alreadyOnboarded(let venueID):
+                // They already set a PIN (e.g. on the web) — remember the venue so
+                // the login screen switches to PIN-only for this device.
+                session.lastStaffVenueID = venueID
+                becameAlreadyOnboarded = true
+            }
         }
     }
 

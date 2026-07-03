@@ -32,11 +32,28 @@ struct AdminService {
             body: Body(merchantId: id, planTier: planTier, billingStatus: billingStatus), auth: .owner)
     }
 
-    func account(id: String, action: String) async throws {
-        struct Body: Encodable { let merchantId: String; let action: String }
+    /// Account controls. Returns an optional URL (reset_password / impersonate).
+    @discardableResult
+    func account(id: String, action: String, email: String? = nil) async throws -> String? {
+        struct Body: Encodable { let merchantId: String; let action: String; let email: String? }
+        struct R: Decodable { let url: String? }
+        let r: R = try await api.post("/api/admin/app/account",
+            body: Body(merchantId: id, action: action, email: email), auth: .owner)
+        return r.url
+    }
+
+    func impersonate(id: String) async throws -> String? {
+        struct Body: Encodable { let merchantId: String }
+        struct R: Decodable { let url: String? }
+        let r: R = try await api.post("/api/admin/app/impersonate", body: Body(merchantId: id), auth: .owner)
+        return r.url
+    }
+
+    func venueAction(action: String, venueId: String? = nil, staffId: String? = nil, tokenId: String? = nil) async throws {
+        struct Body: Encodable { let action: String; let venueId: String?; let staffId: String?; let tokenId: String? }
         struct Ignore: Decodable {}
-        let _: Ignore = try await api.post("/api/admin/app/account",
-            body: Body(merchantId: id, action: action), auth: .owner)
+        let _: Ignore = try await api.post("/api/admin/app/venue-action",
+            body: Body(action: action, venueId: venueId, staffId: staffId, tokenId: tokenId), auth: .owner)
     }
 
     func audit() async throws -> [AdminAudit] {

@@ -40,9 +40,18 @@ struct AdminVenue: Decodable, Identifiable, Hashable {
     let status: String?
     let vertical: String?
 }
+struct AdminStaffRow: Decodable, Identifiable, Hashable {
+    let id: String
+    let displayName: String?
+    let status: String?
+    let venueId: String?
+    var isActive: Bool { status == "active" }
+}
+
 struct AdminMerchantDetail: Decodable {
     let merchant: AdminMerchantInfo
     let venues: [AdminVenue]
+    let staff: [AdminStaffRow]?
     let members: Int?
 }
 

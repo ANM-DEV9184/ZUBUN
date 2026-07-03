@@ -74,12 +74,39 @@ final class AdminMerchantDetailViewModel {
         catch { banner = (.error, error.localizedDescription) }
     }
 
-    func account(_ action: String) async {
+    var shareLink: String?   // reset-password / impersonate URL to copy
+
+    func account(_ action: String, email: String? = nil) async {
         do {
-            try await service.account(id: merchantID, action: action)
-            banner = (.info, action == "disable" ? "Owner login disabled." : "Owner login re-enabled.")
+            let url = try await service.account(id: merchantID, action: action, email: email)
+            if let url { shareLink = url }
+            banner = (.info, message(for: action))
+            if action == "offboard" { await load() }
         } catch let e as APIError { banner = (.error, e.errorDescription ?? "Failed") }
         catch { banner = (.error, error.localizedDescription) }
+    }
+
+    func impersonate() async {
+        do { shareLink = try await service.impersonate(id: merchantID); banner = (.info, "Owner sign-in link ready — copy & open in a browser.") }
+        catch { banner = (.error, "Couldn't create link") }
+    }
+
+    func staffAction(_ action: String, staffID: String) async {
+        do {
+            try await service.venueAction(action: action, staffId: staffID)
+            banner = (.info, "Done."); await load()
+        } catch { banner = (.error, "Action failed") }
+    }
+
+    private func message(for action: String) -> String {
+        switch action {
+        case "disable": return "Owner login disabled."
+        case "enable": return "Owner login re-enabled."
+        case "offboard": return "Owner offboarded (plan cancelled)."
+        case "reset_password": return "Password-reset link ready — copy it below."
+        case "change_email": return "Owner email updated."
+        default: return "Done."
+        }
     }
 }
 
@@ -88,12 +115,26 @@ struct AdminMerchantDetailView: View {
     @State private var plan: AdminPlanTier = .starter
     @State private var billing: AdminBilling = .active
     @State private var confirmDisable = false
+    @State private var confirmOffboard = false
+    @State private var showEmailPrompt = false
+    @State private var newEmail = ""
 
     init(merchantID: String) { _vm = State(initialValue: AdminMerchantDetailViewModel(merchantID: merchantID)) }
 
     var body: some View {
         Form {
             if let banner = vm.banner { Section { InlineBanner(kind: banner.0, message: banner.1) } }
+
+            if let link = vm.shareLink {
+                Section {
+                    Text(link).font(.caption).textSelection(.enabled).foregroundStyle(.secondary)
+                    if let url = URL(string: link) {
+                        ShareLink(item: url) { Label("Share / open link", systemImage: "square.and.arrow.up") }
+                    }
+                } header: { Text("One-time link") } footer: {
+                    Text("Open in a browser. Single-use and time-limited.")
+                }
+            }
 
             if let m = vm.detail?.merchant {
                 Section {
@@ -127,15 +168,51 @@ struct AdminMerchantDetailView: View {
                     }
                 } header: { Text("Venues") }
 
+                if let staff = vm.detail?.staff, !staff.isEmpty {
+                    Section {
+                        ForEach(staff) { s in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(s.displayName ?? "Staff")
+                                    Text(s.status ?? "").font(.caption2).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Menu {
+                                    Button("Reset device") { Task { await vm.staffAction("reset_device", staffID: s.id) } }
+                                    if s.isActive {
+                                        Button("Suspend", role: .destructive) { Task { await vm.staffAction("suspend_staff", staffID: s.id) } }
+                                    } else {
+                                        Button("Reactivate") { Task { await vm.staffAction("reactivate_staff", staffID: s.id) } }
+                                    }
+                                } label: { Image(systemName: "ellipsis.circle") }
+                            }
+                        }
+                    } header: { Text("Staff") } footer: {
+                        Text("Reset device lets a staffer re-bind their phone; suspend blocks their login.")
+                    }
+                }
+
                 Section {
+                    Button { Task { await vm.impersonate() } } label: {
+                        Label("Impersonate owner (link)", systemImage: "person.fill.viewfinder")
+                    }
+                    Button { Task { await vm.account("reset_password") } } label: {
+                        Label("Send password reset", systemImage: "key.horizontal")
+                    }
+                    Button { showEmailPrompt = true } label: {
+                        Label("Change owner email", systemImage: "envelope.badge")
+                    }
                     Button(role: .destructive) { confirmDisable = true } label: {
                         Label("Disable owner login", systemImage: "person.crop.circle.badge.xmark")
                     }
                     Button { Task { await vm.account("enable") } } label: {
                         Label("Re-enable owner login", systemImage: "person.crop.circle.badge.checkmark")
                     }
+                    Button(role: .destructive) { confirmOffboard = true } label: {
+                        Label("Offboard (cancel plan)", systemImage: "xmark.octagon")
+                    }
                 } header: { Text("Account") } footer: {
-                    Text("Disabling blocks the owner from signing in. Members' data and rewards are untouched.")
+                    Text("Members' data and earned rewards are untouched by these actions.")
                 }
             } else {
                 ProgressView()
@@ -147,6 +224,20 @@ struct AdminMerchantDetailView: View {
             Button("Disable login", role: .destructive) { Task { await vm.account("disable") } }
             Button("Cancel", role: .cancel) {}
         }
+        .confirmationDialog("Offboard this merchant?", isPresented: $confirmOffboard, titleVisibility: .visible) {
+            Button("Offboard & cancel plan", role: .destructive) { Task { await vm.account("offboard") } }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text("Disables the owner login and sets billing to cancelled.") }
+        .alert("Change owner email", isPresented: $showEmailPrompt) {
+            TextField("new@email.com", text: $newEmail)
+                .keyboardType(.emailAddress).textInputAutocapitalization(.never)
+            Button("Update") {
+                let e = newEmail.trimmingCharacters(in: .whitespaces)
+                if !e.isEmpty { Task { await vm.account("change_email", email: e) } }
+                newEmail = ""
+            }
+            Button("Cancel", role: .cancel) { newEmail = "" }
+        } message: { Text("The owner will sign in with this email going forward.") }
         .task {
             await vm.load()
             if let m = vm.detail?.merchant {

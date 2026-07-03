@@ -19,6 +19,21 @@ extension OwnerService {
         return try await supabase.rpc("owner_feedback_summary", params: P(pVenueId: venueID), accessToken: session.ownerToken)
     }
 
+    /// Recent feedback rows (with ids) for the reply loop.
+    func feedbackList(venueID: String, onlyLow: Bool = true) async throws -> [OwnerFeedbackItem] {
+        var q: [URLQueryItem] = [.init(name: "venue_id", value: venueID)]
+        if onlyLow { q.append(.init(name: "only_low", value: "1")) }
+        let r: OwnerFeedbackListResponse = try await api.get("/api/owner/feedback", query: q, auth: .owner)
+        return r.items
+    }
+
+    func replyFeedback(id: String, reply: String) async throws {
+        struct Body: Encodable { let feedbackId: String; let reply: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/owner/feedback/reply",
+            body: Body(feedbackId: id, reply: reply), auth: .owner)
+    }
+
     /// Per-venue KPIs (trends, reward funnel) for the analytics overview.
     func venueKPIs(venueID: String) async throws -> VenueKPIs {
         struct P: Encodable { let pVenueId: String }

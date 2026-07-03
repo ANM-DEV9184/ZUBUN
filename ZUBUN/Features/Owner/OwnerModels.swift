@@ -309,6 +309,18 @@ struct CreateVenueResult: Decodable {
     let cap: Int?
 }
 
+// MARK: - Feedback reply loop
+
+struct OwnerFeedbackItem: Decodable, Identifiable {
+    let id: String
+    let score: Int?
+    let comment: String?
+    let ownerReply: String?
+    let repliedAt: String?
+    let createdAt: String?
+}
+struct OwnerFeedbackListResponse: Decodable { let items: [OwnerFeedbackItem] }
+
 // MARK: - Campaigns
 
 struct MerchantPlan: Decodable {

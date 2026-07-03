@@ -129,6 +129,67 @@ struct AdminSignal: Decodable, Identifiable {
 }
 struct AdminSignalsResponse: Decodable { let signals: [AdminSignal] }
 
+// MARK: - Finance (6C)
+
+struct AdminTierCounts: Decodable { let starter: Int?; let standard: Int?; let multi: Int? }
+struct AdminStatusCounts: Decodable { let trialing: Int?; let active: Int?; let pastDue: Int?; let cancelled: Int? }
+struct AdminMetering: Decodable, Identifiable {
+    let id: String
+    let name: String?
+    let planTier: String?
+    let used: Int?
+    let allowance: Int?
+    let remaining: Int?
+}
+struct AdminFinance: Decodable {
+    let mrr: Int?
+    let paying: AdminTierCounts?
+    let byStatus: AdminStatusCounts?
+    let metering: [AdminMetering]
+}
+
+// MARK: - Customers (6D)
+
+struct AdminCustomerRow: Decodable, Identifiable, Hashable {
+    let id: String
+    let phone: String?
+    let email: String?
+    let name: String?
+}
+struct AdminCustomersResponse: Decodable { let customers: [AdminCustomerRow] }
+
+struct AdminCustomerInfo: Decodable {
+    let id: String
+    let phone: String?
+    let email: String?
+    let name: String?
+    let erasureStatus: String?
+    let createdAt: String?
+}
+struct AdminCustomerCard: Decodable, Identifiable {
+    let id: String
+    let venueId: String?
+    let venueName: String?
+    let stamps: Int?
+    let tier: String?
+    let cardState: String?
+    let lastVisitAt: String?
+}
+struct AdminRewardToken: Decodable, Identifiable {
+    let id: String
+    let status: String?
+    let createdAt: String?
+    let consumedAt: String?
+    let expiresAt: String?
+    let membershipId: String?
+    var isActive: Bool { status == "ACTIVE" }
+}
+struct AdminCustomerDetail: Decodable {
+    let customer: AdminCustomerInfo
+    let cards: [AdminCustomerCard]
+    let tokens: [AdminRewardToken]
+}
+
 /// Plan tiers + billing states an admin can set.
 enum AdminPlanTier: String, CaseIterable, Identifiable { case starter, standard, multi; var id: String { rawValue } }
 enum AdminBilling: String, CaseIterable, Identifiable {

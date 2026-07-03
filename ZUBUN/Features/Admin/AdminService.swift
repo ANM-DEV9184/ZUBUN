@@ -124,4 +124,21 @@ struct AdminService {
         let r: AdminSignalsResponse = try await api.get("/api/admin/app/anomalies", auth: .owner)
         return r.signals
     }
+
+    // MARK: Finance + customers (6C / 6D)
+
+    func finance() async throws -> AdminFinance {
+        try await api.get("/api/admin/app/finance", auth: .owner)
+    }
+    func customerSearch(q: String) async throws -> [AdminCustomerRow] {
+        let r: AdminCustomersResponse = try await api.get("/api/admin/app/customers",
+                                                          query: [.init(name: "q", value: q)], auth: .owner)
+        return r.customers
+    }
+    func customer(id: String) async throws -> AdminCustomerDetail {
+        try await api.get("/api/admin/app/customers", query: [.init(name: "id", value: id)], auth: .owner)
+    }
+    func voidReward(tokenID: String, venueID: String) async throws {
+        try await venueAction(action: "void_reward", venueId: venueID, tokenId: tokenID)
+    }
 }

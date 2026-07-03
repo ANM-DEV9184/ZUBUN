@@ -62,6 +62,22 @@ struct AdminDashboardView: View {
                     KPITile(title: "Stamps · 7d", value: vm.overview?.stamps7d)
                     KPITile(title: "Open tickets", value: vm.overview?.openTickets)
                 }
+
+                CardContainer {
+                    VStack(spacing: 0) {
+                        NavigationLink { AdminFinanceView() } label: {
+                            Label("Revenue & metering", systemImage: "chart.line.uptrend.xyaxis")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 6)
+                        Divider()
+                        NavigationLink { AdminCustomersView() } label: {
+                            Label("Customer lookup", systemImage: "magnifyingglass")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
             }
             .padding(20)
         }

@@ -18,6 +18,8 @@ struct AdminHome: View {
                 .tabItem { Label("Merchants", systemImage: "building.2.fill") }
             NavigationStack { AdminSupportInboxView() }
                 .tabItem { Label("Support", systemImage: "bubble.left.and.bubble.right.fill") }
+            NavigationStack { AdminToolsView() }
+                .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver.fill") }
             NavigationStack { AdminAuditView() }
                 .tabItem { Label("Audit", systemImage: "list.bullet.rectangle.fill") }
         }

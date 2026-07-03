@@ -75,4 +75,36 @@ struct AdminService {
         let _: Ignore = try await api.post("/api/admin/app/support/thread",
             body: Body(ticketId: ticketID, action: "status", status: status), auth: .owner)
     }
+
+    // MARK: Troubleshooting (6A)
+
+    func deadJobs() async throws -> [AdminJob] {
+        let r: AdminJobsResponse = try await api.get("/api/admin/app/jobs", auth: .owner)
+        return r.jobs
+    }
+    func retryJob(id: String) async throws {
+        struct Body: Encodable { let jobId: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/jobs", body: Body(jobId: id), auth: .owner)
+    }
+    @discardableResult
+    func retryAllJobs() async throws -> Int {
+        struct Body: Encodable { let all: Bool }
+        struct R: Decodable { let requeued: Int? }
+        let r: R = try await api.post("/api/admin/app/jobs", body: Body(all: true), auth: .owner)
+        return r.requeued ?? 0
+    }
+    func failedWebhooks() async throws -> [AdminWebhook] {
+        let r: AdminWebhooksResponse = try await api.get("/api/admin/app/webhooks", auth: .owner)
+        return r.events
+    }
+    func replayWebhook(id: String) async throws {
+        struct Body: Encodable { let eventId: String }
+        struct Ignore: Decodable {}
+        let _: Ignore = try await api.post("/api/admin/app/webhooks", body: Body(eventId: id), auth: .owner)
+    }
+    func anomalies() async throws -> [AdminSignal] {
+        let r: AdminSignalsResponse = try await api.get("/api/admin/app/anomalies", auth: .owner)
+        return r.signals
+    }
 }

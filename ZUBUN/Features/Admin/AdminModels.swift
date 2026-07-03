@@ -92,6 +92,34 @@ struct AdminThreadResponse: Decodable {
     let messages: [AppTicketMessage]   // reused from the shared support module
 }
 
+// MARK: - Troubleshooting (6A)
+
+struct AdminJob: Decodable, Identifiable {
+    let id: String
+    let jobType: String?
+    let attempts: Int?
+    let error: String?
+    let runAfter: String?
+    let createdAt: String?
+}
+struct AdminJobsResponse: Decodable { let jobs: [AdminJob] }
+
+struct AdminWebhook: Decodable, Identifiable {
+    let id: String
+    let from: String?
+    let error: String?
+    let createdAt: String?
+}
+struct AdminWebhooksResponse: Decodable { let events: [AdminWebhook] }
+
+struct AdminSignal: Decodable, Identifiable {
+    let kind: String?
+    let title: String?
+    let detail: String?
+    var id: String { "\(title ?? "")|\(detail ?? "")" }
+}
+struct AdminSignalsResponse: Decodable { let signals: [AdminSignal] }
+
 /// Plan tiers + billing states an admin can set.
 enum AdminPlanTier: String, CaseIterable, Identifiable { case starter, standard, multi; var id: String { rawValue } }
 enum AdminBilling: String, CaseIterable, Identifiable {

@@ -148,8 +148,7 @@ struct SettingsView: View {
                 Stepper("Stamps required: \(vm.stamps)", value: $vm.stamps, in: 1...100)
                 TextField("Reward text", text: $vm.rewardText)
                 Stepper("Daily cap: \(vm.dailyCap)", value: $vm.dailyCap, in: 1...20)
-                Stepper("Expiry days: \(vm.expiry)", value: $vm.expiry, in: 0...365, step: 5)
-                Stepper("Grace days: \(vm.grace)", value: $vm.grace, in: 0...60)
+                Stepper("Reward valid for: \(vm.expiry) days", value: $vm.expiry, in: 0...365, step: 5)
                 Button("Save program") { Task { await vm.saveProgram() } }
             }
 

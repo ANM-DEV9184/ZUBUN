@@ -44,6 +44,18 @@ struct CustomerService {
         session.clearCustomer()
     }
 
+    /// App-level opt-in for ZUBUN announcements/offers (separate from per-venue marketing).
+    func getAnnouncementOptIn() async throws -> Bool {
+        struct R: Decodable { let enabled: Bool? }
+        let r: R = try await api.get("/api/customer/push-consent", auth: .customer)
+        return r.enabled ?? true
+    }
+    func setAnnouncementOptIn(_ enabled: Bool) async throws {
+        struct Body: Encodable { let enabled: Bool }
+        struct R: Decodable { let ok: Bool? }
+        let _: R = try await api.post("/api/customer/push-consent", body: Body(enabled: enabled), auth: .customer)
+    }
+
     // MARK: - Wallet
 
     func cards() async throws -> [CustomerCard] {

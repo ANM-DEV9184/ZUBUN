@@ -43,6 +43,7 @@ struct CustomerSettingsView: View {
     @State private var bMonth = 1
     @State private var bDay = 1
     @State private var savingBirthday = false
+    @State private var announcementsOn = true
     private let service = CustomerService()
     private let session = SessionStore.shared
 
@@ -83,6 +84,18 @@ struct CustomerSettingsView: View {
                     Label("Help & support", systemImage: "bubble.left.and.bubble.right")
                 }
             }
+
+            Section {
+                Toggle(isOn: $announcementsOn) {
+                    Label("ZUBUN announcements & offers", systemImage: "megaphone")
+                }
+                .onChange(of: announcementsOn) { _, on in
+                    Task { try? await service.setAnnouncementOptIn(on) }
+                }
+            } footer: {
+                Text("Occasional news and offers from ZUBUN. Your venues' loyalty messages are separate.")
+            }
+            .task { announcementsOn = (try? await service.getAnnouncementOptIn()) ?? true }
 
             Section(String(localized: "settings.privacy", defaultValue: "Privacy")) {
                 Button {

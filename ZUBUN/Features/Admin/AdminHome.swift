@@ -76,6 +76,12 @@ struct AdminDashboardView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.vertical, 6)
+                        Divider()
+                        NavigationLink { AdminBroadcastView() } label: {
+                            Label("Announcements", systemImage: "megaphone")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 6)
                     }
                 }
             }

@@ -59,12 +59,33 @@ final class StaffMgmtViewModel {
         _ = try? await service.setStaffStatus(staffID: s.id, status: s.isActive ? "suspended" : "active")
         await load(venueID: v)
     }
+
+    /// Re-fetch a pending staffer's invite link and surface it for re-sharing.
+    func loadInvite(for s: OwnerStaff) async {
+        if let url = try? await service.staffInvite(staffID: s.id), !url.isEmpty {
+            inviteURL = url; inviteName = s.name
+        } else {
+            banner = (.info, String(localized: "staff.already_onboarded",
+                                    defaultValue: "\(s.name) has already set up their account."))
+        }
+    }
+
+    func remove(_ s: OwnerStaff) async {
+        guard let v = venueID ?? OwnerContext.shared.selectedVenueID else { return }
+        let res = try? await service.removeStaff(staffID: s.id)
+        banner = (.info, res == "removed_soft"
+                  ? String(localized: "staff.removed_soft", defaultValue: "\(s.name) removed (had activity, so archived).")
+                  : String(localized: "staff.removed", defaultValue: "\(s.name) removed."))
+        if inviteName == s.name { inviteURL = nil; inviteName = nil }
+        await load(venueID: v)
+    }
 }
 
 struct StaffManagementView: View {
     @State private var context = OwnerContext.shared
     @State private var vm = StaffMgmtViewModel()
     @State private var showAdd = false
+    @State private var removeTarget: OwnerStaff?
 
     var body: some View {
         List {
@@ -128,12 +149,24 @@ struct StaffManagementView: View {
                                 .foregroundStyle(s.isPending ? Brand.warning : (s.isActive ? Brand.success : Brand.stone500))
                         }
                         Spacer()
-                        Button(s.isActive ? String(localized: "staff.suspend", defaultValue: "Suspend")
-                                          : String(localized: "staff.reactivate", defaultValue: "Reactivate")) {
-                            Task { await vm.toggle(s) }
+                        Menu {
+                            if s.isPending {
+                                Button {
+                                    Task { await vm.loadInvite(for: s) }
+                                } label: { Label("Share invite", systemImage: "square.and.arrow.up") }
+                            }
+                            Button {
+                                Task { await vm.toggle(s) }
+                            } label: {
+                                Label(s.isActive ? "Suspend" : "Reactivate",
+                                      systemImage: s.isActive ? "pause.circle" : "play.circle")
+                            }
+                            Button(role: .destructive) { removeTarget = s } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle").font(.title3)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(s.isActive ? Brand.danger : Brand.success)
                     }
                 }
             }
@@ -144,6 +177,17 @@ struct StaffManagementView: View {
         }
         .navigationTitle(Text("Staff", comment: "Staff management title"))
         .toolbar { VenueSwitcher(context: context) }
+        .confirmationDialog(removeTarget.map { "Remove \($0.name)?" } ?? "Remove staffer?",
+                            isPresented: Binding(get: { removeTarget != nil }, set: { if !$0 { removeTarget = nil } }),
+                            titleVisibility: .visible) {
+            Button("Remove", role: .destructive) {
+                if let s = removeTarget { Task { await vm.remove(s) } }
+                removeTarget = nil
+            }
+            Button("Cancel", role: .cancel) { removeTarget = nil }
+        } message: {
+            Text("Removes this person from your team and revokes their access. If they've already stamped or clocked in, their history is kept.")
+        }
         .task(id: context.selectedVenueID) {
             await context.loadVenues()
             if let v = context.selectedVenueID { await vm.load(venueID: v) }

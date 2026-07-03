@@ -243,6 +243,7 @@ extension OwnerService {
                                    query: [
                                        .init(name: "select", value: "id,display_name,status,onboarded"),
                                        .init(name: "venue_id", value: "eq.\(venueID)"),
+                                       .init(name: "status", value: "neq.removed"),
                                        .init(name: "order", value: "display_name.asc"),
                                    ],
                                    accessToken: session.ownerToken)
@@ -261,6 +262,24 @@ extension OwnerService {
         struct P: Encodable { let pStaffId: String; let pStatus: String }
         return try await supabase.rpc("set_staff_status",
                                       params: P(pStaffId: staffID, pStatus: status), accessToken: session.ownerToken)
+    }
+
+    /// Re-fetch a pending staffer's onboarding invite link (to re-share). Returns
+    /// nil if the staffer has already set a PIN.
+    func staffInvite(staffID: String) async throws -> String? {
+        struct R: Decodable { let inviteUrl: String?; let onboarded: Bool? }
+        let r: R = try await api.get("/api/owner/staff-invite",
+                                     query: [.init(name: "staff_id", value: staffID)], auth: .owner)
+        return r.inviteUrl
+    }
+
+    /// Remove a staffer entirely (hard-delete if no activity, else archive).
+    @discardableResult
+    func removeStaff(staffID: String) async throws -> String? {
+        struct P: Encodable { let pStaffId: String }
+        struct R: Decodable { let result: String? }
+        let r: R = try await supabase.rpc("remove_staff", params: P(pStaffId: staffID), accessToken: session.ownerToken)
+        return r.result
     }
 
     // MARK: - Managers (owner-only, Standard/Multi)

@@ -69,6 +69,21 @@ final class SessionStore {
         Keychain.remove(Key.staff)
     }
 
+    // Non-secret hints so a returning staffer re-signs in with just their PIN
+    // (the device is already bound to one venue). Kept across sign-out.
+    var lastStaffVenueID: String? {
+        get { UserDefaults.standard.string(forKey: "zubun.staff.lastVenue") }
+        set { UserDefaults.standard.set(newValue, forKey: "zubun.staff.lastVenue") }
+    }
+    var lastStaffName: String? {
+        get { UserDefaults.standard.string(forKey: "zubun.staff.lastName") }
+        set { UserDefaults.standard.set(newValue, forKey: "zubun.staff.lastName") }
+    }
+    func forgetStaffVenue() {
+        UserDefaults.standard.removeObject(forKey: "zubun.staff.lastVenue")
+        UserDefaults.standard.removeObject(forKey: "zubun.staff.lastName")
+    }
+
     // MARK: Customer / Owner (Supabase access tokens)
 
     func saveCustomerToken(_ token: String, refresh: String? = nil) {

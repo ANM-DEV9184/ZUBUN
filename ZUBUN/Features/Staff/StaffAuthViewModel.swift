@@ -21,8 +21,20 @@ final class StaffAuthViewModel {
     private let service = StaffService()
     private let session = SessionStore.shared
 
+    init() { venueID = session.lastStaffVenueID ?? "" }   // returning staff: PIN-only
+
+    /// This device already knows its venue → show PIN-only sign-in.
+    var hasRememberedVenue: Bool { session.lastStaffVenueID != nil }
+    var rememberedName: String? { session.lastStaffName }
+
     var canSubmitLogin: Bool {
         QRParser.isUUID(venueID.trimmingCharacters(in: .whitespaces)) && Validation.isValidPIN(pin)
+    }
+
+    /// Forget the bound venue (e.g. this is a different person/venue on the device).
+    func useDifferentVenue() {
+        session.forgetStaffVenue()
+        venueID = ""; pin = ""; errorMessage = nil
     }
 
     func login() async {
@@ -61,6 +73,9 @@ final class StaffAuthViewModel {
             venueID: res.venueId,
             expiresAt: DubaiDate.parseISO(res.expiresAt)
         ))
+        // Remember the venue so the next sign-in on this device is PIN-only.
+        session.lastStaffVenueID = res.venueId
+        session.lastStaffName = res.displayName
     }
 
     private func run(_ work: () async throws -> Void) async {

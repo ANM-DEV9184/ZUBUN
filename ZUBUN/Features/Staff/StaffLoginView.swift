@@ -19,55 +19,64 @@ struct StaffLoginView: View {
             VStack(spacing: 20) {
                 header
 
-                CardContainer {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Venue", comment: "Venue id field label")
-                            .font(.subheadline.weight(.semibold))
-                        HStack {
-                            TextField("Venue ID", text: $vm.venueID)
-                                .zNoAutocap()
-                                .autocorrectionDisabled()
+                if vm.hasRememberedVenue {
+                    // Returning staff on a device already bound to a venue → PIN only.
+                    CardContainer {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("PIN", comment: "PIN field label").font(.subheadline.weight(.semibold))
+                            SecureField("4–8 digits", text: $vm.pin)
+                                .zKeyboard(.number)
                                 .environment(\.layoutDirection, .leftToRight)
-                            Button {
-                                showVenueScanner = true
-                            } label: {
-                                Image(systemName: "qrcode.viewfinder").font(.title3)
-                            }
-                            .accessibilityLabel("Scan venue QR")
+                                .padding(12).background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
                         }
-                        .padding(12)
-                        .background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
-
-                        Text("PIN", comment: "PIN field label")
-                            .font(.subheadline.weight(.semibold))
-                        SecureField("4–8 digits", text: $vm.pin)
-                            .zKeyboard(.number)
-                            .environment(\.layoutDirection, .leftToRight)
-                            .padding(12)
-                            .background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
                     }
-                }
-
-                if let error = vm.errorMessage {
-                    InlineBanner(kind: .error, message: error)
-                    if error == ResultCode.deviceMismatch.userMessage {
-                        InlineBanner(kind: .info,
-                                     message: String(localized: "login.device_reset_hint",
-                                                     defaultValue: "Ask your owner to reset your device, then log in again."))
+                    errorBanner
+                    PrimaryButton(title: String(localized: "login.signin", defaultValue: "Sign in"),
+                                  systemImage: "lock.open.fill", isLoading: vm.isLoading) {
+                        Task { await vm.login(); if SessionStore.shared.staff != nil { onAuthenticated() } }
                     }
-                }
+                    .disabled(!vm.canSubmitLogin)
+                    Button(String(localized: "login.different_venue", defaultValue: "Use a different venue")) {
+                        vm.useDifferentVenue()
+                    }
+                    .font(.subheadline)
+                } else {
+                    // First time → the invite is the primary path (no venue ID needed).
+                    PrimaryButton(title: String(localized: "login.setup_invite", defaultValue: "Set up with your invite"),
+                                  systemImage: "person.badge.plus") {
+                        showOnboard = true
+                    }
+                    Text("Your manager sent you a personal invite link — tap above and paste it to set your PIN.",
+                         comment: "First-time staff hint")
+                        .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
 
-                PrimaryButton(title: String(localized: "login.signin", defaultValue: "Sign in"),
-                              systemImage: "lock.open.fill",
-                              isLoading: vm.isLoading) {
-                    Task { await vm.login(); if SessionStore.shared.staff != nil { onAuthenticated() } }
+                    DisclosureGroup(String(localized: "login.have_venue", defaultValue: "I already have a venue ID")) {
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack {
+                                TextField("Venue ID", text: $vm.venueID)
+                                    .zNoAutocap().autocorrectionDisabled()
+                                    .environment(\.layoutDirection, .leftToRight)
+                                Button { showVenueScanner = true } label: {
+                                    Image(systemName: "qrcode.viewfinder").font(.title3)
+                                }
+                                .accessibilityLabel("Scan venue QR")
+                            }
+                            .padding(12).background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
+                            SecureField("4–8 digit PIN", text: $vm.pin)
+                                .zKeyboard(.number)
+                                .environment(\.layoutDirection, .leftToRight)
+                                .padding(12).background(Brand.stone, in: RoundedRectangle(cornerRadius: 12))
+                            errorBanner
+                            PrimaryButton(title: String(localized: "login.signin", defaultValue: "Sign in"),
+                                          systemImage: "lock.open.fill", isLoading: vm.isLoading) {
+                                Task { await vm.login(); if SessionStore.shared.staff != nil { onAuthenticated() } }
+                            }
+                            .disabled(!vm.canSubmitLogin)
+                        }
+                        .padding(.top, 8)
+                    }
+                    .padding(.horizontal, 4)
                 }
-                .disabled(!vm.canSubmitLogin)
-
-                Button(String(localized: "login.first_time", defaultValue: "First time? Set up with an invite")) {
-                    showOnboard = true
-                }
-                .font(.subheadline)
             }
             .padding(20)
         }
@@ -83,14 +92,30 @@ struct StaffLoginView: View {
         }
     }
 
+    @ViewBuilder private var errorBanner: some View {
+        if let error = vm.errorMessage {
+            InlineBanner(kind: .error, message: error)
+            if error == ResultCode.deviceMismatch.userMessage {
+                InlineBanner(kind: .info,
+                             message: String(localized: "login.device_reset_hint",
+                                             defaultValue: "Ask your owner to reset your device, then log in again."))
+            }
+        }
+    }
+
     private var header: some View {
         VStack(spacing: 6) {
             Image(systemName: "qrcode.viewfinder")
                 .font(.system(size: 44))
                 .foregroundStyle(Brand.orange)
             Text("Staff sign in", comment: "Staff login title").font(.brandTitle())
-            Text("Use your venue PIN on this device.", comment: "Staff login subtitle")
-                .font(.subheadline).foregroundStyle(.secondary)
+            if let name = vm.rememberedName {
+                Text("Welcome back, \(name). Enter your PIN.", comment: "Returning staff subtitle")
+                    .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            } else {
+                Text("Use your invite the first time, then just your PIN.", comment: "Staff login subtitle")
+                    .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            }
         }
         .padding(.top, 24)
     }

@@ -31,10 +31,14 @@ final class AdminBroadcastViewModel {
     var silver = false
     var bronze = false
     var activity: BroadcastActivity = .any
+    var venues: [AdminVenueOption] = []
+    var venueID: String?          // nil = all venues
     var reach: Int?
     var banner: (InlineBanner.Kind, String)?
     var busy = false
     private let service = AdminService()
+
+    func loadVenues() async { venues = (try? await service.venuesList()) ?? [] }
 
     private var tiers: [String] {
         var t: [String] = []
@@ -52,7 +56,8 @@ final class AdminBroadcastViewModel {
         busy = true; defer { busy = false }
         do {
             reach = try await service.broadcast(title: title, body: message, deepLink: link.isEmpty ? nil : link,
-                                                tiers: tiers, activeWithin: activeWithin, lapsedBeyond: lapsedBeyond, dryRun: true)
+                                                venueId: venueID, tiers: tiers, activeWithin: activeWithin,
+                                                lapsedBeyond: lapsedBeyond, dryRun: true)
         } catch { banner = (.error, "Couldn't estimate") }
     }
 
@@ -60,7 +65,8 @@ final class AdminBroadcastViewModel {
         busy = true; defer { busy = false }
         do {
             let n = try await service.broadcast(title: title, body: message, deepLink: link.isEmpty ? nil : link,
-                                                tiers: tiers, activeWithin: activeWithin, lapsedBeyond: lapsedBeyond, dryRun: false)
+                                                venueId: venueID, tiers: tiers, activeWithin: activeWithin,
+                                                lapsedBeyond: lapsedBeyond, dryRun: false)
             banner = (.info, "Queued to \(n) member\(n == 1 ? "" : "s").")
             title = ""; message = ""; link = ""; reach = nil
         } catch let e as APIError { banner = (.error, e.errorDescription ?? "Send failed") }
@@ -90,6 +96,10 @@ struct AdminBroadcastView: View {
                 Picker("Activity", selection: $vm.activity) {
                     ForEach(BroadcastActivity.allCases) { Text($0.label).tag($0) }
                 }
+                Picker("Venue", selection: $vm.venueID) {
+                    Text("All venues").tag(String?.none)
+                    ForEach(vm.venues) { v in Text(v.label).tag(String?.some(v.id)) }
+                }
             } header: {
                 Text("Audience")
             } footer: {
@@ -113,6 +123,7 @@ struct AdminBroadcastView: View {
         }
         .navigationTitle(Text("Announcements", comment: "Admin broadcast title"))
         .zInlineTitle()
+        .task { await vm.loadVenues() }
         .confirmationDialog("Send this announcement?", isPresented: $confirmSend, titleVisibility: .visible) {
             Button("Send now") { Task { await vm.send() } }
             Button("Cancel", role: .cancel) {}

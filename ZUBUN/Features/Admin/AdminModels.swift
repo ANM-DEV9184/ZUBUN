@@ -190,6 +190,14 @@ struct AdminCustomerDetail: Decodable {
     let tokens: [AdminRewardToken]
 }
 
+struct AdminVenueOption: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String?
+    let merchantName: String?
+    var label: String { merchantName.map { "\(name ?? "—") · \($0)" } ?? (name ?? "—") }
+}
+struct AdminVenuesResponse: Decodable { let venues: [AdminVenueOption] }
+
 /// Plan tiers + billing states an admin can set.
 enum AdminPlanTier: String, CaseIterable, Identifiable { case starter, standard, multi; var id: String { rawValue } }
 enum AdminBilling: String, CaseIterable, Identifiable {

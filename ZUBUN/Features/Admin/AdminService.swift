@@ -144,17 +144,22 @@ struct AdminService {
 
     // MARK: Announcement broadcast
 
+    func venuesList() async throws -> [AdminVenueOption] {
+        let r: AdminVenuesResponse = try await api.get("/api/admin/app/venues", auth: .owner)
+        return r.venues
+    }
+
     /// Returns estimated reach (dry_run) or queued count (send).
     @discardableResult
-    func broadcast(title: String, body: String, deepLink: String?,
+    func broadcast(title: String, body: String, deepLink: String?, venueId: String?,
                    tiers: [String], activeWithin: Int?, lapsedBeyond: Int?, dryRun: Bool) async throws -> Int {
         struct Body: Encodable {
-            let title: String; let body: String; let deepLink: String?
+            let title: String; let body: String; let deepLink: String?; let venueId: String?
             let tiers: [String]?; let activeWithin: Int?; let lapsedBeyond: Int?; let dryRun: Bool
         }
         struct R: Decodable { let reach: Int?; let queued: Int? }
         let r: R = try await api.post("/api/admin/app/broadcast",
-            body: Body(title: title, body: body, deepLink: deepLink,
+            body: Body(title: title, body: body, deepLink: deepLink, venueId: venueId,
                        tiers: tiers.isEmpty ? nil : tiers, activeWithin: activeWithin,
                        lapsedBeyond: lapsedBeyond, dryRun: dryRun), auth: .owner)
         return r.reach ?? r.queued ?? 0

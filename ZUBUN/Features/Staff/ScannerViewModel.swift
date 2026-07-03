@@ -19,6 +19,7 @@ struct ScanOutcome: Identifiable, Equatable {
     let title: String
     let detail: String?
     let progress: String?   // e.g. "3 / 8"
+    var capOverride: Bool = false   // daily cap hit → offer "request owner approval"
 }
 
 @MainActor
@@ -130,7 +131,28 @@ final class ScannerViewModel {
         if let name = res.customerName, res.result == .stamped || res.result == .rewardIssued {
             title = "\(res.result.userMessage) · \(name)"
         }
-        return .init(tone: res.result.tone, title: title, detail: res.rewardText, progress: progress)
+        return .init(tone: res.result.tone, title: title, detail: res.rewardText, progress: progress,
+                     capOverride: res.result == .dailyCapReached)
+    }
+
+    /// Ask the owner/manager to approve one extra stamp after the daily cap.
+    func requestOverride() async {
+        guard let qr = lastCustomerQR else { return }
+        await process {
+            let result = try await service.requestCapOverride(qr: qr)
+            let ok = result == "requested" || result == "already_pending"
+            return .init(
+                tone: ok ? .info : .error,
+                title: ok ? String(localized: "scan.override.sent", defaultValue: "Sent to owner for approval")
+                          : String(localized: "scan.override.fail", defaultValue: "Couldn't request approval"),
+                detail: result == "already_pending"
+                    ? String(localized: "scan.override.pending", defaultValue: "Already waiting for approval") : nil,
+                progress: nil)
+        } onOffline: {
+            return .init(tone: .info,
+                         title: String(localized: "scan.offline", defaultValue: "You're offline"),
+                         detail: nil, progress: nil)
+        }
     }
 
     private func process(_ work: () async throws -> ScanOutcome,

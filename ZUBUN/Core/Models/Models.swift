@@ -360,9 +360,17 @@ struct StampApproval: Decodable, Identifiable {
     let customerName: String?
     let phone: String?
     let staffName: String?
+    let reason: String?
     let prevStampAt: String?
     let createdAt: String?
     let stampsCount: Int?
+
+    /// Why approval is needed — for the owner's context.
+    var reasonLabel: String {
+        reason == "daily_cap"
+            ? String(localized: "approval.reason.cap", defaultValue: "Over daily limit")
+            : String(localized: "approval.reason.repeat", defaultValue: "Rapid repeat")
+    }
 
     /// Last 4 digits only for display (PDPL-friendly).
     var maskedPhone: String? {

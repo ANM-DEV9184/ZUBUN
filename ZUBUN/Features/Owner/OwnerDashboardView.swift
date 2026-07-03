@@ -290,8 +290,15 @@ struct ApprovalRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(approval.customerName ?? approval.maskedPhone ?? "Customer").font(.headline)
-                    if let staff = approval.staffName {
-                        Text("by \(staff)").font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(approval.reasonLabel)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Brand.amber.opacity(0.2), in: Capsule())
+                            .foregroundStyle(Brand.ink)
+                        if let staff = approval.staffName {
+                            Text("by \(staff)").font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
                 Spacer()

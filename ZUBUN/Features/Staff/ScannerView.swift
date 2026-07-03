@@ -37,6 +37,7 @@ struct ScannerView: View {
                 ResultOverlay(outcome: outcome,
                               canBonus: vm.lastCustomerQR != nil && outcome.tone != .error,
                               onBonus: { count in Task { await vm.bonus(count: count) } },
+                              onRequestOverride: { Task { await vm.requestOverride() } },
                               onDismiss: { vm.outcome = nil })
                     .transition(.opacity.combined(with: .scale))
             }

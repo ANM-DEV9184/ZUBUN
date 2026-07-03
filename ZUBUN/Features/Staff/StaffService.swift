@@ -49,6 +49,14 @@ struct StaffService {
         return try await api.post("/api/staff/redeem", body: Body(qr: qr), auth: .staff)
     }
 
+    /// Request owner approval for an extra stamp after the daily cap is reached.
+    func requestCapOverride(qr: String) async throws -> String {
+        struct Body: Encodable { let qr: String }
+        struct R: Decodable { let result: String? }
+        let r: R = try await api.post("/api/staff/stamp/request-override", body: Body(qr: qr), auth: .staff)
+        return r.result ?? ""
+    }
+
     func bonus(qr: String, count: Int) async throws -> StampResult {
         struct Body: Encodable { let qr: String; let count: Int }
         return try await api.post("/api/staff/bonus", body: Body(qr: qr, count: count), auth: .staff)

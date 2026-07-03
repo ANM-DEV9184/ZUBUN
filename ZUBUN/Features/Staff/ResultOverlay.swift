@@ -12,6 +12,7 @@ struct ResultOverlay: View {
     let outcome: ScanOutcome
     var canBonus: Bool
     var onBonus: (Int) -> Void
+    var onRequestOverride: (() -> Void)? = nil
     var onDismiss: () -> Void
 
     private var color: Color { Brand.toneColor(outcome.tone) }
@@ -63,6 +64,18 @@ struct ResultOverlay: View {
                     }
                     Text("Add bonus stamps", comment: "Bonus hint")
                         .font(.caption).foregroundStyle(.secondary)
+                }
+
+                if outcome.capOverride, let onRequestOverride {
+                    Button { onRequestOverride(); onDismiss() } label: {
+                        Label("Request owner approval", systemImage: "hand.raised.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(Brand.amber.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundStyle(Brand.ink)
+                    }
+                    Text("Over the daily limit — ask the owner to allow one more.", comment: "Cap override hint")
+                        .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
 
                 Button(action: onDismiss) {
